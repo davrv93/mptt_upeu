@@ -1,0 +1,116 @@
+[
+  {
+    "id": 1,
+    "name": "Root",
+    "type": "",
+    "parent": null,
+    "attributes": {}
+  },
+  {
+    "id": 2,
+    "name": "Información General de Asignatura",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "Datos generales": {
+        "Facultad/EPG": "",
+        "Programa de Estudio EP/UPG": "",
+        "Nombre de asignatura": "",
+        "Tipo de estudio": "",
+        "Ciclo de estudio": "",
+        "Año y semestre académico": "",
+        "Año del plan de estudio": "",
+        "Unidad académica EP/UPG": "",
+        "Código de asignatura": "",
+        "Número de créditos": "",
+        "Duración": "",
+        "Nota mínima aprobatoria": ""
+      },
+      "Docentes": {
+        "Docente titular": "",
+        "Docente adjunto": "",
+        "Docente de práctica (Laboratorio)": ""
+      },
+      "Horas del curso": {
+        "H. Teórica presencial": "",
+        "H. Práctica presencial": "",
+        "H. Teórica online": "",
+        "H. Práctica online": "",
+        "Horas teóricas": "",
+        "HTP": "",
+        "HT (Total horas teóricas)": "",
+        "HT Teóricas virtual": ""
+      },
+      "Requisitos": {
+        "Pre requisito": ""
+      }
+    }
+  },
+  {
+    "id": 3,
+    "name": "Sumilla",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "¿Qué debería hacer este campo?": "Completar el contenido correspondiente a la sección: sumilla."
+    }
+  },
+  {
+    "id": 4,
+    "name": "Alineación de la asignatura a la competencia específica o general",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "Competencia específica": {
+        "Nombre de la competencia": "",
+        "Dimensión 1": "Nombre de la dimensión",
+        "Formulación 1": "",
+        "Dimensión 2": "Nombre de la dimensión",
+        "Formulación 2": ""
+      },
+      "Competencia general": {
+        "Nombre de la competencia": "",
+        "Dimensión 1": "Nombre de la dimensión",
+        "Formulación 1": "",
+        "Dimensión 2": "Nombre de la dimensión",
+        "Formulación 2": ""
+      }
+    }
+  },
+  {
+    "id": 5,
+    "name": "Resultado de aprendizaje de la asignatura",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "¿Qué debería hacer este campo?": "Completar el contenido correspondiente a la sección: resultado de aprendizaje de la asignatura."
+    }
+  },
+  {
+    "id": 6,
+    "name": "Unidades de aprendizaje",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "¿Qué debería hacer este campo?": "Completar el contenido correspondiente a la sección: unidades de aprendizaje."
+    }
+  },
+  {
+    "id": 7,
+    "name": "Estrategias metodológicas",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "¿Qué debería hacer este campo?": "Completar el contenido correspondiente a la sección: estrategias metodológicas."
+    }
+  },
+  {
+    "id": 8,
+    "name": "Recursos, medios y materiales",
+    "type": "OTRO",
+    "parent": 1,
+    "attributes": {
+      "¿Qué debería hacer este campo?": "Completar el contenido correspondiente a la sección: recursos, medios y materiales."
+    }
+  }
+]

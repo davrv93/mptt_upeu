@@ -1,0 +1,96 @@
+{
+  "Información General": {
+    "attributes": [
+      "Facultad/EPG",
+      "Programa de Estudio",
+      "Nombre de asignatura",
+      "Tipo de estudio",
+      "Ciclo de estudio",
+      "Año y semestre académico",
+      "Número de créditos",
+      "Duración",
+      "Nota mínima aprobatoria"
+    ]
+  },
+  "Docentes": {
+    "attributes": [
+      "Docente titular",
+      "Docente adjunto",
+      "Docente de práctica"
+    ]
+  },
+  "Sumilla": {
+    "attributes": [
+      "Resumen de la asignatura"
+    ]
+  },
+  "Competencias": {
+    "attributes": [
+      "Competencia específica",
+      "Dimensión específica 1",
+      "Dimensión específica 2",
+      "Competencia general",
+      "Dimensión general 1",
+      "Dimensión general 2"
+    ]
+  },
+  "Resultados de Aprendizaje": {
+    "attributes": [
+      "Resultado de aprendizaje"
+    ]
+  },
+  "Unidades de Aprendizaje": {
+    "attributes": [
+      "Nombre de unidad",
+      "Resultado de unidad",
+      "Contenido",
+      "Horas teóricas",
+      "Horas prácticas",
+      "Actividades autónomas"
+    ]
+  },
+  "Estrategias Metodológicas": {
+    "attributes": [
+      "Estrategias de enseñanza",
+      "Estrategias de aprendizaje"
+    ]
+  },
+  "Recursos": {
+    "attributes": [
+      "Guía de laboratorio",
+      "Guía teórica",
+      "Otros materiales"
+    ]
+  },
+  "Evaluación": {
+    "attributes": [
+      "Fecha",
+      "Estrategia",
+      "Descripción",
+      "Ponderado (%)"
+    ]
+  },
+  "Referencias": {
+    "attributes": [
+      "Referencias básicas",
+      "Referencias complementarias"
+    ]
+  },
+  "UNIDAD": {
+    "attributes": [
+      "Nombre de la unidad",
+      "Resultado de aprendizaje"
+    ]
+  },
+  "SESION": {
+    "attributes": [
+      "Orden",
+      "Título de la sesión",
+      "Actividades de aprendizaje",
+      "Recursos",
+      "Estrategias metodológicas",
+      "Evaluación / Evidencia",
+      "Tiempo estimado"
+    ]
+  }
+}
