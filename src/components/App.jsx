@@ -23,9 +23,10 @@ const Navigation = () => {
   ];
   
   return (
-    <nav className="navbar navbar-expand-lg shadow-lg sticky-top z-0" style={{ 
+    <nav className="navbar navbar-expand-lg shadow-lg sticky-top" style={{ 
       background:'#003264',
-      backdropFilter: 'blur(10px)'
+      backdropFilter: 'blur(10px)',
+      zIndex: 2
     }}>
       <div className="container">
         {/* Brand */}
@@ -181,7 +182,7 @@ const App = () => {
     <Router>
       <div className="min-vh-100 position-relative" style={{ 
         background: 'linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       }}>
         <Navigation />
         
@@ -201,7 +202,7 @@ const App = () => {
         />
         
         {/* Main Content */}
-        <main className="position-relative" style={{ zIndex: 1 }}>
+       <main className="position-relative" style={{ zIndex: 1 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/plantilla" element={<TemplateBuilder />} />
