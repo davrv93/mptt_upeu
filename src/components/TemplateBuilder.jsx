@@ -1,3 +1,4 @@
+import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useCallback } from 'react';
 import nodeTypes from '../node_types_schema.json';
 
@@ -9,6 +10,15 @@ const getInitialData = () => {
   return saved ? JSON.parse(saved) : [
     { id: 1, name: 'Root', type: '', parent: null, attributes: {} }
   ];
+};
+
+const ModalPortal = ({ children, isOpen }) => {
+  if (!isOpen) return null;
+  
+  return ReactDOM.createPortal(
+    children,
+    document.body
+  );
 };
 
 const createBackup = (nodes) => {
@@ -72,19 +82,19 @@ const getNodeColor = (nodeType) => {
 const validateTemplate = (nodes) => {
   const errors = [];
   const warnings = [];
-  
+
   // Verificar estructura básica
   if (!nodes.find(n => n.id === 1)) {
     errors.push('Falta el nodo raíz (Root)');
   }
-  
+
   // Verificar nodos huérfanos
   nodes.forEach(node => {
     if (node.parent && !nodes.find(n => n.id === node.parent)) {
       errors.push(`Nodo "${node.name}" tiene un padre inexistente`);
     }
   });
-  
+
   // Verificar secciones recomendadas
   const recommendedSections = ['Información General', 'Sumilla', 'Referencias'];
   recommendedSections.forEach(section => {
@@ -92,7 +102,7 @@ const validateTemplate = (nodes) => {
       warnings.push(`Sección recomendada "${section}" no encontrada`);
     }
   });
-  
+
   // Verificar profundidad excesiva
   nodes.forEach(node => {
     const depth = getNodeDepth(nodes, node.id);
@@ -100,7 +110,7 @@ const validateTemplate = (nodes) => {
       warnings.push(`Nodo "${node.name}" tiene demasiados niveles anidados (${depth})`);
     }
   });
-  
+
   return { errors, warnings };
 };
 
@@ -119,18 +129,17 @@ const TemplateBuilder = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
-  // Auto-guardado con validación
   const saveTemplate = useCallback((newNodes) => {
     try {
       createBackup(newNodes); // Crear backup antes de guardar
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newNodes));
       localStorage.setItem('template_last_modified', new Date().toISOString());
       setLastSaved(new Date());
-      
+
       // Validar después de guardar
       const validation = validateTemplate(newNodes);
       setValidationResults(validation);
-      
+
       console.log('✅ Plantilla guardada automáticamente');
     } catch (error) {
       console.error('❌ Error al guardar plantilla:', error);
@@ -138,9 +147,36 @@ const TemplateBuilder = () => {
     }
   }, []);
 
+
   useEffect(() => {
-    saveTemplate(nodes);
-  }, [nodes, saveTemplate]);
+    if (nodes.length > 0) {
+      try {
+        // Crear backup antes de guardar
+        createBackup(nodes);
+
+        // Guardar en localStorage
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nodes));
+        localStorage.setItem('template_last_modified', new Date().toISOString());
+
+        // Actualizar estado
+        setLastSaved(new Date());
+
+        // Validar después de guardar
+        const validation = validateTemplate(nodes);
+        setValidationResults(validation);
+
+        console.log('✅ Plantilla guardada automáticamente:', nodes.length, 'nodos');
+
+        // Toast solo para cambios significativos (no en la carga inicial)
+        if (nodes.length > 1) {
+          console.log('📝 Cambios guardados en localStorage');
+        }
+      } catch (error) {
+        console.error('❌ Error al guardar plantilla:', error);
+        showToast('❌ Error al guardar la plantilla', 'error');
+      }
+    }
+  }, [nodes]);
 
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
@@ -176,9 +212,9 @@ const TemplateBuilder = () => {
         <div>${message}</div>
       </div>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       if (document.body.contains(toast)) {
         toast.style.animation = 'slideOutRight 0.3s ease-in';
@@ -190,7 +226,7 @@ const TemplateBuilder = () => {
   const handleAddNode = (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Validaciones
       if (!selected) {
@@ -206,12 +242,12 @@ const TemplateBuilder = () => {
       }
 
       // Verificar duplicados del mismo tipo bajo el mismo padre
-      const existingNode = nodes.find(n => 
-        n.parent === selected && 
-        n.type === nodeType && 
+      const existingNode = nodes.find(n =>
+        n.parent === selected &&
+        n.type === nodeType &&
         nodeType !== 'OTRO'
       );
-      
+
       if (existingNode) {
         showToast(`⚠️ Ya existe una sección "${nodeType}" bajo este nodo`, 'warning');
         setIsLoading(false);
@@ -224,28 +260,57 @@ const TemplateBuilder = () => {
           .filter(a => a.key.trim() !== '')
           .map(a => [a.key, a.value])
       );
-      
-      const newNode = { 
-        id: newId, 
-        name: nodeType === 'OTRO' ? nodeName.trim() : nodeType, 
-        type: nodeType, 
-        parent: selected, 
-        attributes: attrObj 
+
+      const newNode = {
+        id: newId,
+        name: nodeType === 'OTRO' ? nodeName.trim() : nodeType,
+        type: nodeType,
+        parent: selected,
+        attributes: attrObj
       };
-      
-      setNodes(prevNodes => [...prevNodes, newNode]);
-      
+
+      // Actualizar estado
+      const updatedNodes = [...nodes, newNode];
+      setNodes(updatedNodes);
+
+      // Guardado forzado inmediato
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedNodes));
+        localStorage.setItem('template_last_modified', new Date().toISOString());
+        console.log('✅ Nodo guardado inmediatamente en localStorage');
+      } catch (saveError) {
+        console.error('❌ Error al guardar nodo:', saveError);
+        showToast('⚠️ Nodo creado pero no guardado. Intenta refrescar.', 'warning');
+      }
+
       // Reset form
       setNodeName('');
       setNodeType('');
       setAttributes([]);
-      
-      showToast(`✅ Sección "${newNode.name}" creada correctamente`, 'success');
+
+      showToast(`✅ Sección "${newNode.name}" creada y guardada`, 'success');
     } catch (error) {
       showToast('❌ Error al crear la sección', 'error');
       console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('📋 Estado actual en localStorage:', parsed.length, 'nodos');
+        showToast(`📋 localStorage: ${parsed.length} nodos guardados`, 'info');
+      } else {
+        console.log('❌ No hay datos en localStorage');
+        showToast('❌ No hay plantilla en localStorage', 'warning');
+      }
+    } catch (error) {
+      console.error('❌ Error al leer localStorage:', error);
+      showToast('❌ Error al leer localStorage', 'error');
     }
   };
 
@@ -267,7 +332,7 @@ const TemplateBuilder = () => {
     const nodeToDelete = nodes.find(n => n.id === id);
     const descendants = getDescendants(nodes, id);
     const totalToDelete = descendants.length + 1;
-    
+
     if (confirm(`¿Eliminar "${nodeToDelete.name}" y ${totalToDelete > 1 ? `sus ${descendants.length} nodos hijos` : 'este nodo'}?\n\nEsta acción no se puede deshacer.`)) {
       const toDelete = [id, ...descendants];
       setNodes(nodes.filter(n => !toDelete.includes(n.id)));
@@ -292,7 +357,7 @@ const TemplateBuilder = () => {
       .filter(n => n.parent === parent);
     const siblingIndex = siblings.findIndex(n => n.id === id);
     const targetIndex = direction === "up" ? siblingIndex - 1 : siblingIndex + 1;
-    
+
     if (targetIndex >= 0 && targetIndex < siblings.length) {
       const currentIdx = siblings[siblingIndex]._originalIndex;
       const swapIdx = siblings[targetIndex]._originalIndex;
@@ -329,23 +394,23 @@ const TemplateBuilder = () => {
 
   const handleDrop = (e, targetId) => {
     e.preventDefault();
-    
+
     if (!draggedNode || draggedNode === targetId) return;
-    
+
     // Verificar que no se mueva a un descendiente (evitar ciclos)
     const descendants = getDescendants(nodes, draggedNode);
     if (descendants.includes(targetId)) {
       showToast('❌ No puedes mover un nodo a su propio descendiente', 'error');
       return;
     }
-    
+
     // Actualizar el padre del nodo arrastrado
-    setNodes(prevNodes => 
-      prevNodes.map(n => 
+    setNodes(prevNodes =>
+      prevNodes.map(n =>
         n.id === draggedNode ? { ...n, parent: targetId } : n
       )
     );
-    
+
     showToast('✅ Nodo reubicado correctamente', 'success');
     setDraggedNode(null);
     setDropTarget(null);
@@ -355,11 +420,11 @@ const TemplateBuilder = () => {
     const templates = {
       'basico': [
         { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-        { 
-          id: 2, 
-          name: 'Información General', 
-          type: 'Información General', 
-          parent: null, 
+        {
+          id: 2,
+          name: 'Información General',
+          type: 'Información General',
+          parent: null,
           attributes: {
             "Facultad/EPG": "",
             "Programa de Estudio": "",
@@ -369,20 +434,20 @@ const TemplateBuilder = () => {
             "Duración": ""
           }
         },
-        { 
-          id: 3, 
-          name: 'Sumilla', 
-          type: 'Sumilla', 
-          parent: null, 
+        {
+          id: 3,
+          name: 'Sumilla',
+          type: 'Sumilla',
+          parent: null,
           attributes: {
             "Resumen de la asignatura": ""
           }
         },
-        { 
-          id: 4, 
-          name: 'Referencias', 
-          type: 'Referencias', 
-          parent: null, 
+        {
+          id: 4,
+          name: 'Referencias',
+          type: 'Referencias',
+          parent: null,
           attributes: {
             "Referencias básicas": "",
             "Referencias complementarias": ""
@@ -391,11 +456,11 @@ const TemplateBuilder = () => {
       ],
       'completo': [
         { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-        { 
-          id: 2, 
-          name: 'Información General', 
-          type: 'Información General', 
-          parent: null, 
+        {
+          id: 2,
+          name: 'Información General',
+          type: 'Información General',
+          parent: null,
           attributes: {
             "Facultad/EPG": "",
             "Programa de Estudio": "",
@@ -408,63 +473,63 @@ const TemplateBuilder = () => {
             "Nota mínima aprobatoria": ""
           }
         },
-        { 
-          id: 3, 
-          name: 'Docentes', 
-          type: 'Docentes', 
-          parent: null, 
+        {
+          id: 3,
+          name: 'Docentes',
+          type: 'Docentes',
+          parent: null,
           attributes: {
             "Docente titular": "",
             "Docente adjunto": "",
             "Docente de práctica": ""
           }
         },
-        { 
-          id: 4, 
-          name: 'Sumilla', 
-          type: 'Sumilla', 
-          parent: null, 
+        {
+          id: 4,
+          name: 'Sumilla',
+          type: 'Sumilla',
+          parent: null,
           attributes: {
             "Resumen de la asignatura": ""
           }
         },
-        { 
-          id: 5, 
-          name: 'Competencias', 
-          type: 'Competencias', 
-          parent: null, 
+        {
+          id: 5,
+          name: 'Competencias',
+          type: 'Competencias',
+          parent: null,
           attributes: {
             "Competencia específica": "",
             "Competencia general": ""
           }
         },
-        { 
-          id: 6, 
-          name: 'Unidades de Aprendizaje', 
-          type: 'Unidades de Aprendizaje', 
-          parent: null, 
+        {
+          id: 6,
+          name: 'Unidades de Aprendizaje',
+          type: 'Unidades de Aprendizaje',
+          parent: null,
           attributes: {
             "Nombre de unidad": "",
             "Resultado de unidad": "",
             "Contenido": ""
           }
         },
-        { 
-          id: 7, 
-          name: 'Evaluación', 
-          type: 'Evaluación', 
-          parent: null, 
+        {
+          id: 7,
+          name: 'Evaluación',
+          type: 'Evaluación',
+          parent: null,
           attributes: {
             "Estrategia": "",
             "Descripción": "",
             "Ponderado (%)": ""
           }
         },
-        { 
-          id: 8, 
-          name: 'Referencias', 
-          type: 'Referencias', 
-          parent: null, 
+        {
+          id: 8,
+          name: 'Referencias',
+          type: 'Referencias',
+          parent: null,
           attributes: {
             "Referencias básicas": "",
             "Referencias complementarias": ""
@@ -514,7 +579,7 @@ const TemplateBuilder = () => {
     reader.onload = (e) => {
       try {
         const importedData = JSON.parse(e.target.result);
-        
+
         // Verificar si es formato nuevo o legacy
         let templateNodes;
         if (importedData.version && importedData.nodes) {
@@ -559,7 +624,7 @@ const TemplateBuilder = () => {
     }
   };
 
-  const filteredNodes = nodes.filter(node => 
+  const filteredNodes = nodes.filter(node =>
     node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     node.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -577,10 +642,10 @@ const TemplateBuilder = () => {
           const isRoot = node.id === 1;
           const isDropTarget = dropTarget === node.id;
           const isDragging = draggedNode === node.id;
-          
+
           return (
             <div key={node.id} className="mb-3">
-              <div 
+              <div
                 className={`card shadow-sm border-0 hover-card ${isSelected ? 'border-primary' : ''} ${isDragging ? 'dragging' : ''} ${isDropTarget ? 'drop-target' : ''}`}
                 style={{
                   borderLeft: `5px solid ${nodeColor}`,
@@ -598,11 +663,11 @@ const TemplateBuilder = () => {
               >
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-center">
-                    
+
                     {/* Información del nodo */}
                     <div className="d-flex align-items-center flex-grow-1">
                       {/* Icono del tipo */}
-                      <div 
+                      <div
                         className="me-3 d-flex align-items-center justify-content-center rounded-circle"
                         style={{
                           width: '50px',
@@ -617,7 +682,7 @@ const TemplateBuilder = () => {
 
                       {/* Contenido del nodo */}
                       <div className="flex-grow-1">
-                        <button 
+                        <button
                           className={`btn btn-link text-decoration-none p-0 text-start ${isSelected ? 'fw-bold' : ''}`}
                           style={{ color: nodeColor }}
                           onClick={() => setSelected(node.id)}
@@ -626,17 +691,17 @@ const TemplateBuilder = () => {
                             <span className="fs-5 fw-semibold">{node.name}</span>
                             <small className="text-muted">
                               {node.type} • Nivel {depth}
-                              {Object.keys(node.attributes || {}).length > 0 && 
+                              {Object.keys(node.attributes || {}).length > 0 &&
                                 ` • ${Object.keys(node.attributes).length} campos`
                               }
                             </small>
                           </div>
                         </button>
-                        
+
                         {/* Indicador de nodo seleccionado */}
                         {isSelected && (
-                          <div className="mt-2">
-                            <span 
+                          <div className="children-container mt-3">
+                            <span
                               className="badge rounded-pill px-3 py-2"
                               style={{ backgroundColor: nodeColor, color: 'white', fontSize: '0.75rem' }}
                             >
@@ -644,14 +709,120 @@ const TemplateBuilder = () => {
                             </span>
                           </div>
                         )}
-                        
+
                         {/* Información adicional */}
+                        {/* Renderizar nodos hijos con contenedor visual mejorado */}
                         {hasChildren && (
-                          <div className="mt-2">
-                            <small className="text-muted">
-                              <span className="me-1">👶</span>
-                              Tiene {nodes.filter(n => n.parent === node.id).length} nodo(s) hijo(s)
-                            </small>
+                          <div className="children-container position-relative mt-3">
+                            {/* Línea conectora principal del padre */}
+                            <div
+                              className="parent-connector"
+                              style={{
+                                position: 'absolute',
+                                left: '25px',
+                                top: '-10px',
+                                width: '3px',
+                                height: '20px',
+                                backgroundColor: nodeColor,
+                                borderRadius: '0 0 3px 3px'
+                              }}
+                            />
+
+                            {/* Contenedor visual mejorado para los hijos */}
+                            <div
+                              className="children-wrapper"
+                              style={{
+                                marginLeft: '15px',
+                                paddingLeft: '25px',
+                                paddingTop: '15px',
+                                paddingBottom: '10px',
+                                paddingRight: '15px',
+                                borderLeft: `4px solid ${nodeColor}`,
+                                borderBottom: `2px solid ${nodeColor}40`,
+                                borderRadius: '0 0 0 16px',
+                                position: 'relative',
+                                background: `linear-gradient(135deg, ${nodeColor}05, transparent)`,
+                                backdropFilter: 'blur(1px)'
+                              }}
+                            >
+                              {/* Header visual del grupo de hijos */}
+                              <div
+                                className="children-header mb-3"
+                                style={{
+                                  fontSize: '0.85rem',
+                                  color: nodeColor,
+                                  fontWeight: '600',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px 12px',
+                                  background: `linear-gradient(90deg, ${nodeColor}15, ${nodeColor}05)`,
+                                  borderRadius: '8px',
+                                  border: `1px solid ${nodeColor}30`,
+                                  position: 'relative'
+                                }}
+                              >
+                                {/* Indicador de conexión con el padre */}
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    left: '-13px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    width: '12px',
+                                    height: '2px',
+                                    backgroundColor: nodeColor
+                                  }}
+                                />
+
+                                <span style={{ fontSize: '1rem' }}>📁</span>
+                                <span>Elementos de "{node.name}"</span>
+                                <span
+                                  className="badge"
+                                  style={{
+                                    backgroundColor: nodeColor,
+                                    color: 'white',
+                                    fontSize: '0.7rem'
+                                  }}
+                                >
+                                  {nodes.filter(n => n.parent === node.id).length}
+                                </span>
+
+                                {/* Indicador visual de jerarquía */}
+                                <div className="ms-auto d-flex align-items-center gap-1">
+                                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+                                    Nivel {depth + 1}
+                                  </span>
+                                  <div
+                                    style={{
+                                      width: '8px',
+                                      height: '8px',
+                                      backgroundColor: nodeColor,
+                                      borderRadius: '50%',
+                                      opacity: 0.6
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Renderizar los nodos hijos */}
+                              <div className="children-nodes">
+                                {renderTree(nodes, node.id, depth + 1)}
+                              </div>
+
+                              {/* Decoración inferior del contenedor */}
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '0',
+                                  left: '0',
+                                  right: '0',
+                                  height: '2px',
+                                  background: `linear-gradient(90deg, ${nodeColor}, transparent)`,
+                                  borderRadius: '0 2px 0 0'
+                                }}
+                              />
+                            </div>
                           </div>
                         )}
 
@@ -672,9 +843,9 @@ const TemplateBuilder = () => {
                     <div className="d-flex align-items-center gap-2">
                       {/* Indicador de arrastre */}
                       {!isRoot && (
-                        <div 
+                        <div
                           className="drag-handle me-2"
-                          style={{ 
+                          style={{
                             cursor: 'grab',
                             color: nodeColor,
                             fontSize: '1.2rem'
@@ -688,10 +859,10 @@ const TemplateBuilder = () => {
                       {/* Botones de movimiento */}
                       {!isRoot && (
                         <div className="btn-group me-2" role="group">
-                          <button 
+                          <button
                             className="btn btn-outline-secondary btn-sm"
                             onClick={(e) => { e.preventDefault(); moveNode(node.id, 'up'); }}
-                            style={{ 
+                            style={{
                               borderColor: nodeColor,
                               color: nodeColor,
                               borderRadius: '8px 0 0 8px'
@@ -700,10 +871,10 @@ const TemplateBuilder = () => {
                           >
                             ⬆️
                           </button>
-                          <button 
+                          <button
                             className="btn btn-outline-secondary btn-sm"
                             onClick={(e) => { e.preventDefault(); moveNode(node.id, 'down'); }}
-                            style={{ 
+                            style={{
                               borderColor: nodeColor,
                               color: nodeColor,
                               borderRadius: '0 8px 8px 0'
@@ -716,9 +887,9 @@ const TemplateBuilder = () => {
                       )}
 
                       {/* Indicador de nivel */}
-                      <span 
+                      <span
                         className="badge rounded-pill me-2"
-                        style={{ 
+                        style={{
                           backgroundColor: `${nodeColor}20`,
                           color: nodeColor,
                           border: `1px solid ${nodeColor}50`
@@ -729,7 +900,7 @@ const TemplateBuilder = () => {
 
                       {/* Botón eliminar */}
                       {!isRoot && (
-                        <button 
+                        <button
                           className="btn btn-outline-danger btn-sm"
                           onClick={() => handleDeleteNode(node.id)}
                           title="Eliminar nodo"
@@ -744,11 +915,11 @@ const TemplateBuilder = () => {
               </div>
 
               {/* Renderizar nodos hijos */}
-              {hasChildren && (
-                <div className="position-relative">
+              {/* {hasChildren && (
+                <div className="children-nodes">
                   {renderTree(nodes, node.id, depth + 1)}
                 </div>
-              )}
+              )} */}
             </div>
           );
         })}
@@ -758,6 +929,36 @@ const TemplateBuilder = () => {
 
   const renderSelectedNodeInfo = () => {
     if (!selected) {
+      // Si no hay selección pero existe Root, sugerir seleccionarlo
+      const rootNode = nodes.find(n => n.id === 1);
+      if (rootNode && nodes.length === 1) {
+        return (
+          <div className="alert border-0 mb-4 d-flex flex-column justify-content-center" style={{ backgroundColor: '#FFF3CD', borderRadius: '16px', borderLeft: '4px solid #FFC107' }}>
+            <div className="d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center">
+                <span className="me-3" style={{ fontSize: '2rem' }}>🏠</span>
+                <div>
+                  <strong className="text-warning">Selecciona el nodo Root para empezar</strong>
+                  <br />
+                  <small className="text-muted">Haz clic en el nodo Root para seleccionarlo como padre de las nuevas secciones.</small>
+                </div>
+              </div>
+
+            </div>
+            <button
+              className="btn btn-warning btn-sm"
+              onClick={() => {
+                setSelected(1);
+                showToast('🎯 Root seleccionado como padre', 'success');
+              }}
+            >
+              Seleccionar Nodo ROOT
+            </button>
+          </div>
+
+        );
+      }
+
       return (
         <div className="alert border-0 mb-4" style={{ backgroundColor: '#EAF8FF', borderRadius: '16px' }}>
           <div className="d-flex align-items-center">
@@ -776,11 +977,11 @@ const TemplateBuilder = () => {
     if (!selectedNode) return null;
 
     const nodeColor = getNodeColor(selectedNode.type);
-    
+
     return (
-      <div 
+      <div
         className="alert border-0 mb-4"
-        style={{ 
+        style={{
           backgroundColor: `${nodeColor}10`,
           borderLeft: `4px solid ${nodeColor}`,
           borderRadius: '16px'
@@ -797,6 +998,7 @@ const TemplateBuilder = () => {
             <br />
             <small className="text-muted">
               Los nuevos nodos se crearán como hijos de "{selectedNode.name}"
+              {selectedNode.id === 1 && ' (Nodo principal)'}
             </small>
           </div>
         </div>
@@ -810,9 +1012,9 @@ const TemplateBuilder = () => {
       <div className="row mb-4">
         <div className="col-12">
           <div className="card shadow-sm border-0" style={{ borderRadius: '20px' }}>
-            <div 
+            <div
               className="card-header border-0 py-4"
-              style={{ 
+              style={{
                 background: 'linear-gradient(135deg, #003264 0%, #1A8D5A 100%)',
                 color: 'white',
                 borderRadius: '20px 20px 0 0'
@@ -884,7 +1086,7 @@ const TemplateBuilder = () => {
                 </div>
                 <div className="col-md-6">
                   <div className="d-flex gap-2">
-                    <button 
+                    <button
                       className="btn btn-outline-primary"
                       onClick={() => setShowTemplateModal(true)}
                       style={{ borderRadius: '12px' }}
@@ -892,7 +1094,7 @@ const TemplateBuilder = () => {
                       <span className="me-1">📋</span>
                       Plantillas
                     </button>
-                    <button 
+                    <button
                       className="btn btn-outline-success"
                       onClick={exportTemplate}
                       style={{ borderRadius: '12px' }}
@@ -903,8 +1105,8 @@ const TemplateBuilder = () => {
                     <label className="btn btn-outline-info mb-0" style={{ borderRadius: '12px' }}>
                       <span className="me-1">📤</span>
                       Importar
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         accept=".json"
                         onChange={importTemplate}
                         className="d-none"
@@ -913,7 +1115,7 @@ const TemplateBuilder = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Validación y estado */}
               {(validationResults.errors.length > 0 || validationResults.warnings.length > 0) && (
                 <div className="mt-3">
@@ -977,10 +1179,10 @@ const TemplateBuilder = () => {
 
             {/* Formulario para agregar nodos */}
             <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
-              <div 
+              <div
                 className="card-header border-0 py-3"
-                style={{ 
-                  backgroundColor: '#1A8D5A', 
+                style={{
+                  backgroundColor: '#1A8D5A',
                   color: 'white',
                   borderRadius: '16px 16px 0 0'
                 }}
@@ -998,12 +1200,12 @@ const TemplateBuilder = () => {
                       <span className="me-2">🏷️</span>
                       Tipo de sección
                     </label>
-                    <select 
-                      className="form-select border-2" 
-                      value={nodeType} 
-                      onChange={e => setNodeType(e.target.value)} 
+                    <select
+                      className="form-select border-2"
+                      value={nodeType}
+                      onChange={e => setNodeType(e.target.value)}
                       required
-                      style={{ 
+                      style={{
                         borderColor: nodeType ? getNodeColor(nodeType) : '#DEE2E6',
                         borderRadius: '12px'
                       }}
@@ -1018,7 +1220,7 @@ const TemplateBuilder = () => {
                     {nodeType && (
                       <small className="form-text text-muted mt-2">
                         <span className="me-1">{getNodeIcon(nodeType)}</span>
-                        {nodeType === 'OTRO' 
+                        {nodeType === 'OTRO'
                           ? 'Sección personalizada - Define tu propio nombre'
                           : `Sección estándar con ${nodeTypes[nodeType]?.attributes?.length || 0} campos predefinidos`
                         }
@@ -1033,14 +1235,14 @@ const TemplateBuilder = () => {
                         <span className="me-2">✏️</span>
                         Nombre de la sección
                       </label>
-                      <input 
-                        type="text" 
-                        className="form-control border-2" 
+                      <input
+                        type="text"
+                        className="form-control border-2"
                         placeholder="Ej. Cronograma, Metodología..."
-                        value={nodeName} 
-                        onChange={e => setNodeName(e.target.value)} 
-                        required 
-                        style={{ 
+                        value={nodeName}
+                        onChange={e => setNodeName(e.target.value)}
+                        required
+                        style={{
                           borderColor: '#E97E00',
                           borderRadius: '12px'
                         }}
@@ -1059,13 +1261,13 @@ const TemplateBuilder = () => {
                         Campos de la sección
                         <span className="badge bg-secondary ms-2">{attributes.length}</span>
                       </label>
-                      
+
                       <div className="attribute-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                         {attributes.map((attr, idx) => (
-                          <div 
-                            className="card border-1 mb-3" 
+                          <div
+                            className="card border-1 mb-3"
                             key={idx}
-                            style={{ 
+                            style={{
                               borderColor: nodeType ? `${getNodeColor(nodeType)}30` : '#DEE2E6',
                               borderRadius: '12px'
                             }}
@@ -1076,30 +1278,30 @@ const TemplateBuilder = () => {
                                   <label className="form-label small fw-semibold">
                                     Campo {idx + 1}
                                   </label>
-                                  <input 
-                                    type="text" 
-                                    className="form-control form-control-sm mb-2" 
+                                  <input
+                                    type="text"
+                                    className="form-control form-control-sm mb-2"
                                     placeholder="Nombre del campo"
-                                    value={attr.key} 
-                                    onChange={e => handleAttributeChange(idx, 'key', e.target.value)} 
-                                    required 
+                                    value={attr.key}
+                                    onChange={e => handleAttributeChange(idx, 'key', e.target.value)}
+                                    required
                                     style={{ borderRadius: '8px' }}
                                   />
                                 </div>
                                 <div className="col-9">
-                                  <input 
-                                    type="text" 
-                                    className="form-control form-control-sm" 
+                                  <input
+                                    type="text"
+                                    className="form-control form-control-sm"
                                     placeholder="Valor por defecto (opcional)"
-                                    value={attr.value} 
-                                    onChange={e => handleAttributeChange(idx, 'value', e.target.value)} 
+                                    value={attr.value}
+                                    onChange={e => handleAttributeChange(idx, 'value', e.target.value)}
                                     style={{ borderRadius: '8px' }}
                                   />
                                 </div>
                                 <div className="col-3">
-                                  <button 
-                                    type="button" 
-                                    className="btn btn-outline-danger btn-sm w-100" 
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger btn-sm w-100"
                                     onClick={() => handleRemoveAttribute(idx)}
                                     title="Eliminar campo"
                                     style={{ borderRadius: '8px' }}
@@ -1112,10 +1314,10 @@ const TemplateBuilder = () => {
                           </div>
                         ))}
                       </div>
-                      
-                      <button 
-                        type="button" 
-                        className="btn btn-outline-primary btn-sm w-100 mt-2" 
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm w-100 mt-2"
                         onClick={handleAddAttribute}
                         style={{ borderRadius: '12px' }}
                       >
@@ -1127,10 +1329,10 @@ const TemplateBuilder = () => {
 
                   {/* Botón de agregar */}
                   <div className="d-grid">
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-lg"
-                      style={{ 
+                      style={{
                         backgroundColor: nodeType ? getNodeColor(nodeType) : '#1A8D5A',
                         borderColor: nodeType ? getNodeColor(nodeType) : '#1A8D5A',
                         color: 'white',
@@ -1151,7 +1353,7 @@ const TemplateBuilder = () => {
                       )}
                     </button>
                   </div>
-                  
+
                   {(!selected || !nodeType) && (
                     <div className="mt-3 text-center">
                       <small className="text-muted">
@@ -1192,21 +1394,28 @@ const TemplateBuilder = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-3 d-flex gap-2">
-                  <button 
+                  <button
                     className="btn btn-outline-secondary btn-sm flex-fill"
                     onClick={restoreBackup}
                     style={{ borderRadius: '8px' }}
                   >
                     🔄 Backup
                   </button>
-                  <button 
+                  <button
                     className="btn btn-outline-info btn-sm flex-fill"
                     onClick={() => setShowPreview(!showPreview)}
                     style={{ borderRadius: '8px' }}
                   >
                     👁️ Preview
+                  </button>
+                  <button
+                    className="btn btn-outline-info btn-sm flex-fill"
+                    onClick={checkLocalStorage}
+                    style={{ borderRadius: '8px' }}
+                  >
+                    🔍 Check Storage
                   </button>
                 </div>
               </div>
@@ -1215,10 +1424,32 @@ const TemplateBuilder = () => {
         </div>
       </div>
 
-      {/* Modal de plantillas predefinidas */}
-      {showTemplateModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+    
+
+     {/* Modal de plantillas predefinidas usando Portal */}
+      <ModalPortal isOpen={showTemplateModal}>
+        <div 
+          className="modal fade show d-block" 
+          tabIndex="-1" 
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowTemplateModal(false);
+            }
+          }}
+        >
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content" style={{ borderRadius: '16px' }}>
               <div className="modal-header border-0" style={{ backgroundColor: '#003264', color: 'white', borderRadius: '16px 16px 0 0' }}>
                 <h5 className="modal-title">
@@ -1282,14 +1513,34 @@ const TemplateBuilder = () => {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
 
-      {/* Preview modal */}
-      {showPreview && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-xl">
+      {/* Preview modal usando Portal */}
+      <ModalPortal isOpen={showPreview}>
+        <div 
+          className="modal fade show d-block" 
+          tabIndex="-1" 
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPreview(false);
+            }
+          }}
+        >
+          <div className="modal-dialog modal-xl" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content" style={{ borderRadius: '16px' }}>
-              <div className="modal-header border-0" style={{ backgroundColor: '#1A8D5A', color: 'white', borderRadius: '16px 16px 0 0' }}>
+              <div className="modal-header border-0" style={{ backgroundColor: '#003264', color: 'white', borderRadius: '16px 16px 0 0' }}>
                 <h5 className="modal-title">
                   <span className="me-2">👁️</span>
                   Vista Previa de la Plantilla
@@ -1361,7 +1612,7 @@ const TemplateBuilder = () => {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
 
       <style jsx>{`
         .hover-card {
