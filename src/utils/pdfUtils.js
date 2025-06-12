@@ -161,9 +161,9 @@ export const PDF_STYLES = `
  * @returns {Object} Información básica extraída
  */
 const extractBasicInfo = (syllabusData, nodes) => {
-  let faculty = 'FACULTAD DE INGENIERÍA Y ARQUITECTURA';
-  let program = 'PROGRAMA DE ESTUDIOS';
-  let courseName = 'NOMBRE DE LA ASIGNATURA';
+  let faculty = 'Facultad de Ciencias de la Salud';
+  let program = 'EP Medicina';
+  let courseName = 'Biofísica';
   
   // Buscar en todos los nodos por información básica
   nodes.forEach(node => {
@@ -229,19 +229,6 @@ export const generatePDFHTML = (syllabusData, nodes) => {
         })}</p>
       </div>
 
-      <!-- Sección de firmas -->
-      <div class="pdf-signature-section">
-        <div class="pdf-signature">
-          <div class="pdf-signature-line">
-            Coordinador Académico
-          </div>
-        </div>
-        <div class="pdf-signature">
-          <div class="pdf-signature-line">
-            Docente Responsable
-          </div>
-        </div>
-      </div>
     </div>
   `;
 
