@@ -160,16 +160,18 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate app initialization
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
   if (isLoading) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center" 
-           style={{ background: 'linear-gradient(135deg, #003264 0%, #1A8D5A 100%)' }}>
-        <div className="text-center text-white">
+      <div className="min-vh-100 d-flex align-items-center justify-content-center" >
+        <div className="text-center"
+        style={{
+          color: '#276CA1'
+        }}
+        >
           <div className="spinner-border mb-3" style={{ width: '3rem', height: '3rem' }}></div>
           <h4 className="fw-bold">Cargando Editor de Sílabo...</h4>
           <p className="opacity-75">Preparando el sistema académico</p>
