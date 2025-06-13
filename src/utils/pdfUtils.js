@@ -72,11 +72,9 @@ export const PDF_STYLES = `
   .pdf-section-title {
     font-size: 14px;
     font-weight: bold;
-    color: #003264;
+    color: #000;
     margin-bottom: 10px;
     padding: 8px 12px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #003264;
     text-transform: uppercase;
   }
 
