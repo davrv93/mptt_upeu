@@ -37,22 +37,23 @@ export const PDF_STYLES = `
   }
 
   .pdf-header {
+    background: #003264;
     text-align: center;
     margin-bottom: 30px;
-    border-bottom: 2px solid #003264;
     padding-bottom: 15px;
   }
 
   .pdf-university {
-    font-size: 16px;
+    padding-top: 20px;
+    font-size: 20px;
     font-weight: bold;
-    color: #003264;
+    color: #fff;
     margin-bottom: 5px;
   }
 
-  .pdf-faculty {
-    font-size: 14px;
-    color: #1A8D5A;
+  .pdf-info {
+    font-size: 12px;
+    color: #fff;
     margin-bottom: 10px;
   }
 
@@ -60,8 +61,7 @@ export const PDF_STYLES = `
     font-size: 18px;
     font-weight: bold;
     text-transform: uppercase;
-    margin-top: 15px;
-    color: #003264;
+    color: #F8A900;
   }
 
   .pdf-section {
@@ -164,7 +164,7 @@ const extractBasicInfo = (syllabusData, nodes) => {
   let faculty = 'Facultad de Ciencias de la Salud';
   let program = 'EP Medicina';
   let courseName = 'Biofísica';
-  
+
   // Buscar en todos los nodos por información básica
   nodes.forEach(node => {
     const nodeData = syllabusData[node.id];
@@ -172,18 +172,18 @@ const extractBasicInfo = (syllabusData, nodes) => {
       // Facultad
       if (nodeData['Facultad/EPG']) faculty = nodeData['Facultad/EPG'];
       if (nodeData['Facultad']) faculty = nodeData['Facultad'];
-      
+
       // Programa
       if (nodeData['Programa de Estudio']) program = nodeData['Programa de Estudio'];
       if (nodeData['Programa']) program = nodeData['Programa'];
-      
+
       // Nombre del curso
       if (nodeData['Nombre de asignatura']) courseName = nodeData['Nombre de asignatura'];
       if (nodeData['Asignatura']) courseName = nodeData['Asignatura'];
       if (nodeData['Curso']) courseName = nodeData['Curso'];
     }
   });
-  
+
   return { faculty, program, courseName };
 };
 
@@ -195,20 +195,17 @@ const extractBasicInfo = (syllabusData, nodes) => {
  */
 export const generatePDFHTML = (syllabusData, nodes) => {
   const basicInfo = extractBasicInfo(syllabusData, nodes);
-  
+
   // Filtrar nodos válidos (excluir Root)
   const rootChildren = nodes.filter(node => node.parent === 1 && node.id !== 1);
-  
+
   let html = `
     <div class="pdf-container">
       <!-- Header del documento -->
       <div class="pdf-header">
-        <div class="pdf-university">UNIVERSIDAD PERUANA UNIÓN</div>
-        <div class="pdf-faculty">${basicInfo.faculty.toUpperCase()}</div>
-        <div class="pdf-title">SÍLABO</div>
-        <div style="margin-top: 15px; font-size: 14px; font-weight: bold;">
-          ${basicInfo.courseName.toUpperCase()}
-        </div>
+        <div class="pdf-university">Universidad Peruana Unión</div>
+        <div class="pdf-info">Carret. Central km. 19.5 Ñaña. T elf. 01-6186300 Casilla 3564 Lima 1, Perú</div>
+        <div class="pdf-title">SÍLABO: ${basicInfo.courseName.toUpperCase()}</div>
       </div>
   `;
 
@@ -222,11 +219,11 @@ export const generatePDFHTML = (syllabusData, nodes) => {
       <!-- Footer del documento -->
       <div class="pdf-footer">
         <p>Documento generado el ${new Date().toLocaleDateString('es-PE', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}</p>
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })}</p>
       </div>
 
     </div>
@@ -250,7 +247,7 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
   if (section.attributes && Object.keys(section.attributes).length > 0) {
     Object.entries(section.attributes).forEach(([key, defaultValue]) => {
       const value = syllabusData[section.id]?.[key] || defaultValue || '';
-      
+
       // Solo mostrar campos que tienen contenido
       if (value && value.toString().trim() !== '') {
         html += `
@@ -268,11 +265,11 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
   subsections.forEach(subsection => {
     html += `<div class="pdf-subsection">`;
     html += `<div class="pdf-subsection-title">${subsection.name}</div>`;
-    
+
     if (subsection.attributes && Object.keys(subsection.attributes).length > 0) {
       Object.entries(subsection.attributes).forEach(([key, defaultValue]) => {
         const value = syllabusData[subsection.id]?.[key] || defaultValue || '';
-        
+
         // Solo mostrar campos que tienen contenido
         if (value && value.toString().trim() !== '') {
           html += `
@@ -346,7 +343,7 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
     tempContainer.style.top = '0';
     tempContainer.style.width = '210mm';
     tempContainer.style.background = 'white';
-    
+
     document.body.appendChild(tempContainer);
 
     // Configuración de html2canvas
@@ -438,7 +435,7 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
  */
 export const generateOptimizedPDF = async (syllabusData, nodes, filename) => {
   const htmlContent = generatePDFHTML(syllabusData, nodes);
-  
+
   return await generatePDF(htmlContent, filename, {
     scale: 2,
     quality: 1.0,
@@ -454,7 +451,7 @@ export const generateOptimizedPDF = async (syllabusData, nodes, filename) => {
  */
 export const previewPDF = (syllabusData, nodes) => {
   const htmlContent = generatePDFHTML(syllabusData, nodes);
-  
+
   const previewWindow = window.open('', '_blank');
   previewWindow.document.write(`
     <!DOCTYPE html>
