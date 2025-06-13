@@ -66,7 +66,7 @@ const globalStyles = `
 
   .form-control:focus {
     border-color: var(--info-color);
-    box-shadow: 0 0 0 0.2rem rgba(39, 102, 162, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(39, 108, 161, 0.25); 
   }
 
   .alert {
@@ -196,7 +196,7 @@ const globalStyles = `
 
   /* Mejoras de accesibilidad */
   .btn:focus, .form-control:focus {
-    outline: 2px solid var(--info-color);
+    outline: 2px solid #86B7FE;
     outline-offset: 2px;
   }
 
