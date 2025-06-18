@@ -5,8 +5,8 @@ import TemplateBuilder from './TemplateBuilder';
 import SyllabusEditor from './SyllabusEditor';
 import { AuthProvider } from '../auth/AuthContext';
 import OAuth2Callback from './OAuth2Callback';
+import UserProfile from './UserProfile';
 
-// ... resto del Navigation component igual ...
 
 const Navigation = () => {
   const location = useLocation();
@@ -215,6 +215,7 @@ const App = () => {
               <Route path="/editor" element={<SyllabusEditor />} />
               
               <Route path="/auth/callback" element={<OAuth2Callback />} />
+              <Route path="/perfil" element={<UserProfile />} />
             </Routes>
           </main>
 
