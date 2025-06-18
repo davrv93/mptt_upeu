@@ -9,7 +9,8 @@ export const environment = {
         success: '/',
         responseType: 'token', 
         scope: 'read introspection', 
-    }
+    },
+     apiUrls: {
+         auth: 'https://www.upeu.dev/lamb-academic/backs/auth',
+     }
 };
-
-
