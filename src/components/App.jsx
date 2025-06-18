@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Home from './Home';
 import TemplateBuilder from './TemplateBuilder';
 import SyllabusEditor from './SyllabusEditor';
-import { AuthProvider } from '../auth/AuthContext';
+import { AuthProvider, useAuth } from '../auth/AuthContext';
 import OAuth2Callback from './OAuth2Callback';
 import UserProfile from './UserProfile';
-
 
 const Navigation = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [templateExists, setTemplateExists] = useState(false);
+
+  const { isAuthenticated, loading, token, user, environment, authenticate, logout } = useAuth();
 
   useEffect(() => {
     const template = localStorage.getItem('mptt_template');
@@ -20,11 +21,86 @@ const Navigation = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Función para obtener las iniciales del usuario
+  const getUserInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase();
+  };
+
+  // Función mejorada para logout
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      // Limpiar sesión local
+      logout();
+      
+      // Redireccionar al sistema de autenticación
+      const redirectUri = encodeURIComponent(environment.authStrategy.redirectUri);
+      const logoutUrl = `${environment.authStrategy.baseEndpoint}/accounts/logout/?next=/accounts/login/?redirect_uri=${redirectUri}`;
+      
+      // Redirigir después de un breve delay para asegurar que el logout se procese
+      setTimeout(() => {
+        window.location.href = logoutUrl;
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Fallback: forzar recarga de la página
+      window.location.reload();
+    }
+  };
+
   const navItems = [
     { path: '/', icon: '🏠', label: 'Inicio', color: '#003264' },
     { path: '/plantilla', icon: '🏗️', label: 'Crear Plantilla', color: '#1A8D5A' },
-    { path: '/editor', icon: '✍️', label: 'Llenar Sílabo', color: '#276CA1', disabled: !templateExists }
+    { path: '/editor', icon: '✍️', label: 'Llenar Sílabo', color: '#276CA1', disabled: !templateExists },
   ];
+
+  // Si no está autenticado, mostrar botón de login
+  if (!isAuthenticated && !loading) {
+    return (
+      <nav className="navbar navbar-expand-lg shadow-lg sticky-top" style={{
+        background: '#003264',
+        backdropFilter: 'blur(10px)',
+        zIndex: 2
+      }}>
+        <div className="container">
+          <Link to="/" className="navbar-brand text-white d-flex align-items-center fw-bold">
+            <div className="d-flex align-items-center">
+              <div
+                className="me-3 d-flex align-items-center justify-content-center rounded-circle"
+                style={{
+                  width: '45px',
+                  height: '45px',
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>📚</span>
+              </div>
+              <div>
+                <div className="fw-bold" style={{ fontSize: '1.2rem' }}>Editor de Sílabo</div>
+              </div>
+            </div>
+          </Link>
+          
+          <button 
+            className="btn btn-outline-light"
+            onClick={authenticate}
+          >
+            <i className="fas fa-sign-in-alt me-2"></i>
+            Iniciar Sesión
+          </button>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="navbar navbar-expand-lg shadow-lg sticky-top" style={{
@@ -33,7 +109,6 @@ const Navigation = () => {
       zIndex: 2
     }}>
       <div className="container">
-        {/* Brand */}
         <Link to="/" className="navbar-brand text-white d-flex align-items-center fw-bold">
           <div className="d-flex align-items-center">
             <div
@@ -54,7 +129,6 @@ const Navigation = () => {
           </div>
         </Link>
 
-        {/* Template Status Indicator */}
         <div className="d-none d-md-block me-3">
           <div className={`badge ${templateExists ? 'bg-success' : 'bg-warning text-dark'} px-3 py-2`}>
             <small>
@@ -108,7 +182,6 @@ const Navigation = () => {
           </div>
         </button>
 
-        {/* Navigation Menu */}
         <div className={`collapse navbar-collapse ${isCollapsed ? '' : 'show'}`}>
           <ul className="navbar-nav ms-auto">
             {navItems.map((item) => (
@@ -116,10 +189,10 @@ const Navigation = () => {
                 <Link
                   to={item.disabled ? '#' : item.path}
                   className={`nav-link px-4 py-2 rounded-pill position-relative d-flex align-items-center gap-2 transition-all ${isActive(item.path)
-                      ? 'bg-white text-dark fw-bold shadow-sm'
-                      : item.disabled
-                        ? 'text-white-50 pe-none'
-                        : 'text-white hover-nav-item'
+                    ? 'bg-white text-dark fw-bold shadow-sm'
+                    : item.disabled
+                      ? 'text-white-50 pe-none'
+                      : 'text-white hover-nav-item'
                     }`}
                   style={{
                     transition: 'all 0.3s ease',
@@ -152,6 +225,143 @@ const Navigation = () => {
                 </Link>
               </li>
             ))}
+          </ul>
+
+          {/* User Profile Menu */}
+          <ul className="navbar-nav ms-3 mb-2 mb-lg-0 profile-menu">
+            <li className="nav-item dropdown">
+              <a 
+                className="nav-link dropdown-toggle p-1" 
+                href="#" 
+                id="navbarDropdown" 
+                role="button" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false"
+                style={{ textDecoration: 'none' }}
+              >
+                <div className="d-flex align-items-center text-white">
+                  {/* Avatar */}
+                  <div className="me-2">
+                    {user?.foto ? (
+                      <img
+                        src={user.foto}
+                        alt="Profile"
+                        className="rounded-circle"
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          objectFit: 'cover',
+                          border: '2px solid rgba(255,255,255,0.3)'
+                        }}
+                        onError={(e) => {
+                          // Fallback si la imagen no carga
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    
+                    {/* Fallback avatar con iniciales */}
+                    <div
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #1A8D5A, #276CA1)',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        fontSize: '0.9rem',
+                        display: user?.foto ? 'none' : 'flex'
+                      }}
+                    >
+                      {getUserInitials(user?.user_name)}
+                    </div>
+                  </div>
+
+                  {/* User Info */}
+                  <div className="d-none d-lg-block text-start">
+                    <div className="fw-semibold" style={{ fontSize: '0.9rem', lineHeight: '1.2' }}>
+                      {user?.user_name || user?.username || 'Usuario'}
+                    </div>
+                    <small className="opacity-75" style={{ fontSize: '0.75rem' }}>
+                      {user?.departament_name || user?.entity_name || 'Departamento'}
+                    </small>
+                  </div>
+                </div>
+              </a>
+
+              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style={{
+                minWidth: '250px',
+                border: '1px solid rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+              }}>
+                {/* User info header */}
+                <li className="px-3 py-2 border-bottom">
+                  <div className="d-flex align-items-center">
+                    <div className="me-3">
+                      {user?.foto ? (
+                        <img
+                          src={user.foto}
+                          alt="Profile"
+                          className="rounded-circle"
+                          style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                          style={{
+                            width: '50px',
+                            height: '50px',
+                            background: 'linear-gradient(135deg, #1A8D5A, #276CA1)',
+                            fontSize: '1.2rem'
+                          }}
+                        >
+                          {getUserInitials(user?.user_name)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="fw-semibold text-dark">
+                        {user?.user_name || 'Usuario'}
+                      </div>
+                      <small className="text-muted">
+                        {user?.username || ''}
+                      </small>
+                      <br />
+                      <small className="text-muted">
+                        {user?.departament_name || ''}
+                      </small>
+                    </div>
+                  </div>
+                </li>
+
+                {/* Menu items */}
+                <li>
+                  <Link className="dropdown-item" to="/perfil">
+                    <i className="fas fa-user fa-fw me-2"></i> 
+                    Mi Perfil
+                  </Link>
+                </li>
+                <li>
+                  <a className="dropdown-item" href="#">
+                    <i className="fas fa-cog fa-fw me-2"></i> 
+                    Configuración
+                  </a>
+                </li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
+                <li>
+                  <a 
+                    className="dropdown-item text-danger" 
+                    href="#" 
+                    onClick={handleLogout}
+                  >
+                    <i className="fas fa-sign-out-alt fa-fw me-2"></i>
+                    Cerrar Sesión
+                  </a>
+                </li>
+              </ul>
+            </li>
           </ul>
         </div>
       </div>
@@ -192,7 +402,6 @@ const App = () => {
         }}>
           <Navigation />
 
-          {/* Background Pattern */}
           <div
             className="position-fixed w-100 h-100"
             style={{
@@ -207,19 +416,16 @@ const App = () => {
             }}
           />
 
-          {/* Main Content */}
           <main className="position-relative" style={{ zIndex: 1 }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/plantilla" element={<TemplateBuilder />} />
               <Route path="/editor" element={<SyllabusEditor />} />
-              
               <Route path="/auth/callback" element={<OAuth2Callback />} />
               <Route path="/perfil" element={<UserProfile />} />
             </Routes>
           </main>
 
-          {/* Footer */}
           <footer className="mt-5 py-4 text-center text-muted border-top bg-white">
             <div className="container">
               <small>
@@ -262,6 +468,21 @@ const App = () => {
           border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
+        .dropdown-menu {
+          animation: fadeIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
         @media (max-width: 768px) {
           .navbar-brand div:first-child {
             font-size: 1rem;
@@ -277,12 +498,10 @@ const App = () => {
           }
         }
         
-        /* Smooth scrolling */
         html {
           scroll-behavior: smooth;
         }
         
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
           width: 6px;
         }
