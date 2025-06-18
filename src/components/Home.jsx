@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthTest from './AuthTest';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -616,6 +617,8 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      <AuthTest />
 
       <style jsx>{`
         .hover-card {
