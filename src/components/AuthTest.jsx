@@ -4,17 +4,6 @@ import { useAuth } from '../auth/AuthContext';
 const AuthTest = () => {
   const { isAuthenticated, loading, token, user, environment, authenticate, logout } = useAuth();
 
-  // ✅ VALIDAR que environment existe antes de usarlo
-  if (!environment) {
-    return (
-      <div className="card border-0 shadow-sm">
-        <div className="card-body text-center">
-          <div className="text-danger mb-3">⚠️</div>
-          <p className="text-danger">Error: Environment no está configurado</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
