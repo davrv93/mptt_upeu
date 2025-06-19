@@ -53,9 +53,7 @@ const getNodeColor = (nodeType) => {
 };
 
 const TemplateBuilder = () => {
-  // Hook personalizado con toda la lógica MPTT
   const {
-    // Estados
     nodes,
     selected,
     draggedNode,
@@ -64,36 +62,25 @@ const TemplateBuilder = () => {
     lastSaved,
     isLoading,
     stats,
-
-    // Setters
     setSelected,
-
-    // Funciones principales
     addNode,
     deleteNode,
     moveNode,
-
-    // Drag and drop
     handleDragStart,
     handleDragEnd,
     handleDragOver,
     handleDragEnter,
     handleDrop,
-
-    // Plantillas y persistencia
     loadPredefinedTemplate,
     exportTemplate,
     importTemplate,
     restoreBackup,
     checkLocalStorage,
-
-    // Utilidades
     filterNodes,
     utils,
     showToast
   } = useMPTTNodes();
 
-  // Estados locales para el formulario y UI
   const [nodeName, setNodeName] = useState('');
   const [nodeType, setNodeType] = useState('');
   const [attributes, setAttributes] = useState([]);
@@ -101,7 +88,6 @@ const TemplateBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
-  // Actualizar atributos cuando cambia el tipo de nodo
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
       setAttributes(nodeTypes[nodeType].attributes.map(key => ({ key, value: '' })));
