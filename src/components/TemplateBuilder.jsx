@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import nodeTypes from '../node_types_schema.json';
 import { useMPTTNodes } from '../hooks/useMPTTNodes';
+import { useAttributesDragDrop } from '../hooks/useAttributesDragDrop';
 
 const ModalPortal = ({ children, isOpen }) => {
   if (!isOpen) return null;
@@ -56,8 +57,6 @@ const TemplateBuilder = () => {
   const {
     nodes,
     selected,
-    draggedNode,
-    dropTarget,
     validationResults,
     lastSaved,
     isLoading,
@@ -66,18 +65,16 @@ const TemplateBuilder = () => {
     addNode,
     deleteNode,
     moveNode,
-    handleDragStart,
-    handleDragEnd,
-    handleDragOver,
-    handleDragEnter,
-    handleDrop,
+    draggedNode,
+    dropTarget,
+    getNodeDragProps,
+    getNodeDropProps,
     loadPredefinedTemplate,
     exportTemplate,
     importTemplate,
     restoreBackup,
     checkLocalStorage,
     filterNodes,
-    utils,
     showToast
   } = useMPTTNodes();
 
@@ -88,6 +85,28 @@ const TemplateBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
+  const {
+    draggedAttribute,
+    dropTarget: attributeDropTarget,
+    isDragging: isAttributeDragging,
+
+    // Handlers de atributos con drag and drop
+    handleAttributeChange,
+    handleAddAttribute,
+    handleRemoveAttribute,
+    moveAttribute,
+
+    // Props de drag and drop para atributos
+    getAttributeDragProps,
+    getAttributeDropProps,
+    getAttributeDropZoneStyles,
+
+    // Helpers de estado para atributos
+    isDraggedAttribute,
+    isDropTarget: isAttributeDropTarget,
+  } = useAttributesDragDrop(attributes, setAttributes, showToast);
+
+  // Actualizar atributos cuando cambia el tipo de nodo
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
       setAttributes(nodeTypes[nodeType].attributes.map(key => ({ key, value: '' })));
@@ -117,20 +136,6 @@ const TemplateBuilder = () => {
       setNodeType('');
       setAttributes([]);
     }
-  };
-
-  const handleAttributeChange = (index, field, value) => {
-    const newAttrs = [...attributes];
-    newAttrs[index][field] = value;
-    setAttributes(newAttrs);
-  };
-
-  const handleAddAttribute = () => {
-    setAttributes([...attributes, { key: '', value: '' }]);
-  };
-
-  const handleRemoveAttribute = (index) => {
-    setAttributes(attributes.filter((_, i) => i !== index));
   };
 
   const handleImportTemplate = async (event) => {
@@ -175,12 +180,8 @@ const TemplateBuilder = () => {
                   borderRadius: '16px',
                   opacity: isDragging ? 0.5 : 1
                 }}
-                draggable={!isRoot}
-                onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDragEnter={(e) => handleDragEnter(e, node.id)}
-                onDrop={(e) => handleDrop(e, node.id)}
+                {...(!isRoot ? getNodeDragProps(node.id, { type: 'node' }) : {})}
+                {...getNodeDropProps(node.id)}
               >
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-center">
@@ -770,59 +771,150 @@ const TemplateBuilder = () => {
                         <span className="me-2">📝</span>
                         Campos de la sección
                         <span className="badge bg-secondary ms-2">{attributes.length}</span>
+                        {attributes.length > 1 && (
+                          <small className="d-block text-muted mt-1 fw-normal">
+                            <span className="me-1">💡</span>
+                            Arrastra los campos para reordenarlos o usa los botones ⬆️⬇️
+                          </small>
+                        )}
                       </label>
 
                       <div className="attribute-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        {attributes.map((attr, idx) => (
-                          <div
-                            className="card border-1 mb-3"
-                            key={idx}
-                            style={{
-                              borderColor: nodeType ? `${getNodeColor(nodeType)}30` : '#DEE2E6',
-                              borderRadius: '12px'
-                            }}
-                          >
-                            <div className="card-body p-3">
-                              <div className="row g-2">
-                                <div className="col-12">
-                                  <label className="form-label small fw-semibold">
-                                    Campo {idx + 1}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="form-control form-control-sm mb-2"
-                                    placeholder="Nombre del campo"
-                                    value={attr.key}
-                                    onChange={e => handleAttributeChange(idx, 'key', e.target.value)}
-                                    required
-                                    style={{ borderRadius: '8px' }}
-                                  />
+                        {attributes.map((attr, idx) => {
+                          const isDraggedAttr = isDraggedAttribute(idx);
+                          const isDropTargetAttr = isAttributeDropTarget(idx);
+                          
+                          return (
+                            <div
+                              className="card border-1 mb-3"
+                              key={idx}
+                              style={{
+                                borderColor: nodeType ? `${getNodeColor(nodeType)}30` : '#DEE2E6',
+                                borderRadius: '12px',
+                                ...getAttributeDropZoneStyles(idx, {
+                                  backgroundColor: isDropTargetAttr ? `${getNodeColor(nodeType)}10` : '#FFFFFF'
+                                })
+                              }}
+                              {...getAttributeDragProps(idx)}
+                              {...getAttributeDropProps(idx)}
+                            >
+                              <div className="card-body p-3">
+                                <div className="row g-2 align-items-center">
+                                  {/* Drag handle */}
+                                  <div className="col-auto">
+                                    <div
+                                      className="drag-handle text-muted"
+                                      style={{
+                                        cursor: 'grab',
+                                        fontSize: '1rem',
+                                        opacity: isDraggedAttr ? 0.5 : 0.7,
+                                        userSelect: 'none'
+                                      }}
+                                      title="Arrastra para reordenar campos"
+                                    >
+                                      ⋮⋮
+                                    </div>
+                                  </div>
+
+                                  <div className="col">
+                                    <div className="row g-2">
+                                      <div className="col-12">
+                                        <label className="form-label small fw-semibold d-flex align-items-center justify-content-between">
+                                          <span>Campo {idx + 1}</span>
+                                          <div className="btn-group" role="group">
+                                            <button
+                                              type="button"
+                                              className="btn btn-outline-secondary btn-sm"
+                                              onClick={() => moveAttribute(idx, 'up')}
+                                              disabled={idx === 0}
+                                              style={{ borderRadius: '4px 0 0 4px' }}
+                                              title="Mover arriba"
+                                            >
+                                              ⬆️
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="btn btn-outline-secondary btn-sm"
+                                              onClick={() => moveAttribute(idx, 'down')}
+                                              disabled={idx === attributes.length - 1}
+                                              style={{ borderRadius: '0 4px 4px 0' }}
+                                              title="Mover abajo"
+                                            >
+                                              ⬇️
+                                            </button>
+                                          </div>
+                                        </label>
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm mb-2"
+                                          placeholder="Nombre del campo"
+                                          value={attr.key}
+                                          onChange={e => handleAttributeChange(idx, 'key', e.target.value)}
+                                          required
+                                          style={{ borderRadius: '8px' }}
+                                        />
+                                      </div>
+                                      <div className="col-9">
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm"
+                                          placeholder="Valor por defecto (opcional)"
+                                          value={attr.value}
+                                          onChange={e => handleAttributeChange(idx, 'value', e.target.value)}
+                                          style={{ borderRadius: '8px' }}
+                                        />
+                                      </div>
+                                      <div className="col-3">
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline-danger btn-sm w-100"
+                                          onClick={() => handleRemoveAttribute(idx)}
+                                          title="Eliminar campo"
+                                          style={{ borderRadius: '8px' }}
+                                        >
+                                          🗑️
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="col-9">
-                                  <input
-                                    type="text"
-                                    className="form-control form-control-sm"
-                                    placeholder="Valor por defecto (opcional)"
-                                    value={attr.value}
-                                    onChange={e => handleAttributeChange(idx, 'value', e.target.value)}
-                                    style={{ borderRadius: '8px' }}
-                                  />
-                                </div>
-                                <div className="col-3">
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-danger btn-sm w-100"
-                                    onClick={() => handleRemoveAttribute(idx)}
-                                    title="Eliminar campo"
-                                    style={{ borderRadius: '8px' }}
+
+                                {/* Indicador visual mejorado para drag and drop */}
+                                {isDraggedAttr && (
+                                  <div
+                                    className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                    style={{
+                                      backgroundColor: 'rgba(26, 141, 90, 0.1)',
+                                      borderRadius: '12px',
+                                      border: '2px dashed #1A8D5A',
+                                      zIndex: 10
+                                    }}
                                   >
-                                    🗑️
-                                  </button>
-                                </div>
+                                    <span className="badge bg-success">
+                                      🔄 Moviendo campo...
+                                    </span>
+                                  </div>
+                                )}
+
+                                {isDropTargetAttr && !isDraggedAttr && (
+                                  <div
+                                    className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                    style={{
+                                      backgroundColor: 'rgba(26, 141, 90, 0.05)',
+                                      borderRadius: '12px',
+                                      border: '2px dashed #1A8D5A',
+                                      zIndex: 5
+                                    }}
+                                  >
+                                    <span className="badge bg-info">
+                                      📍 Soltar aquí
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <button
@@ -1136,6 +1228,7 @@ const TemplateBuilder = () => {
         .drag-handle:hover {
           cursor: grab;
           transform: scale(1.1);
+          opacity: 1 !important;
         }
         
         .drag-handle:active {
@@ -1158,6 +1251,56 @@ const TemplateBuilder = () => {
         .attribute-container::-webkit-scrollbar-thumb {
           background: #1A8D5A;
           border-radius: 3px;
+        }
+
+        /* Estilos para drag and drop de atributos */
+        .attribute-container .card {
+          position: relative;
+          transition: all 0.3s ease;
+        }
+
+        .attribute-container .card:hover .drag-handle {
+          opacity: 1 !important;
+          color: #1A8D5A !important;
+        }
+
+        .attribute-container .card[draggable="true"]:hover {
+          cursor: grab;
+          box-shadow: 0 4px 12px rgba(26, 141, 90, 0.2);
+        }
+
+        .attribute-container .card[draggable="true"]:active {
+          cursor: grabbing;
+        }
+
+        /* Animaciones mejoradas para drag and drop */
+        @keyframes attributeDragStart {
+          from {
+            transform: scale(1);
+            opacity: 1;
+          }
+          to {
+            transform: scale(1.02) rotate(1deg);
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes attributeDropZone {
+          0%, 100% {
+            border-color: #1A8D5A;
+          }
+          50% {
+            border-color: #0d6efd;
+          }
+        }
+
+        .attribute-container .card.dragging {
+          animation: attributeDragStart 0.2s ease-out;
+          z-index: 1000;
+        }
+
+        .attribute-container .card.drop-target {
+          animation: attributeDropZone 1s ease-in-out infinite;
         }
         
         @keyframes slideInRight {
