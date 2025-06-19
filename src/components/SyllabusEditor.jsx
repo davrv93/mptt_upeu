@@ -1,8 +1,6 @@
-// SyllabusEditor.jsx - Editor de Sílabos Optimizado
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Importar utilidades PDF
 import {
   generateOptimizedPDF,
   previewPDF
@@ -11,7 +9,6 @@ import {
 const SyllabusEditor = () => {
   const navigate = useNavigate();
 
-  // Estados principales
   const [nodes, setNodes] = useState([]);
   const [syllabusData, setSyllabusData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -19,46 +16,38 @@ const SyllabusEditor = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Estados para estadísticas
   const [pdfGenerationCount, setPdfGenerationCount] = useState(0);
   const [previewCount, setPreviewCount] = useState(0);
   const [lastPdfGenerated, setLastPdfGenerated] = useState(null);
 
-  // Estados para UI
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
   const [expandedSections, setExpandedSections] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Constantes - Usar las claves correctas del localStorage
   const LOCAL_STORAGE_KEY = 'mptt_template';
   const SYLLABUS_DATA_KEY = 'syllabus_editor_data';
 
-  // Función para mostrar toasts
   const showToast = useCallback((message, type = 'info') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
   }, []);
 
-  // Cargar plantilla y datos del sílabo
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Cargar plantilla desde mptt_template
         const savedTemplate = localStorage.getItem(LOCAL_STORAGE_KEY);
 
         if (savedTemplate) {
           const parsedNodes = JSON.parse(savedTemplate);
 
-          // Validar que sea un array válido
           if (Array.isArray(parsedNodes) && parsedNodes.length > 0) {
             setNodes(parsedNodes);
             console.log('✅ Plantilla cargada:', parsedNodes.length, 'nodos');
 
-            // Expandir todas las secciones por defecto
             const expandedState = {};
             parsedNodes.forEach(node => {
-              if (node.id !== 1) { // No expandir el Root
+              if (node.id !== 1) { 
                 expandedState[node.id] = true;
               }
             });
@@ -143,9 +132,7 @@ const SyllabusEditor = () => {
     return icons[type] || '📄';
   }, []);
 
-  // Función para obtener color basado en el tipo (simplificada)
   const getNodeColor = useCallback((type) => {
-    // Hash simple del tipo para generar color consistente
     let hash = 0;
     const str = type || 'default';
     for (let i = 0; i < str.length; i++) {
@@ -156,30 +143,17 @@ const SyllabusEditor = () => {
     return colors[Math.abs(hash) % colors.length];
   }, []);
 
-  // Función de debug para verificar localStorage
   const debugLocalStorage = useCallback(() => {
-    console.log('🔍 Debug del Editor de Sílabo:');
-    console.log('📋 Plantilla cargada:', nodes.length, 'nodos');
-    console.log('📝 Datos del sílabo:', Object.keys(syllabusData).length, 'secciones con datos');
-
-    // Mostrar estructura de nodos
-    console.log('🌳 Estructura de nodos:');
     nodes.forEach(node => {
       console.log(`  - ID: ${node.id}, Nombre: "${node.name}", Padre: ${node.parent}, Campos: ${Object.keys(node.attributes || {}).length}`);
     });
 
-    // Verificar localStorage
     const templateExists = localStorage.getItem(LOCAL_STORAGE_KEY);
     const dataExists = localStorage.getItem(SYLLABUS_DATA_KEY);
-
-    console.log('💾 localStorage:');
-    console.log(`  - ${LOCAL_STORAGE_KEY}: ${templateExists ? '✅ Existe' : '❌ No existe'}`);
-    console.log(`  - ${SYLLABUS_DATA_KEY}: ${dataExists ? '✅ Existe' : '❌ No existe'}`);
 
     showToast(`📊 ${nodes.length} nodos | ${Object.keys(syllabusData).length} con datos | Template: ${templateExists ? '✅' : '❌'}`, 'info');
   }, [nodes, syllabusData]);
 
-  // Manejar cambios en los campos
   const handleFieldChange = useCallback((nodeId, fieldKey, value) => {
     setSyllabusData(prev => ({
       ...prev,
@@ -191,7 +165,6 @@ const SyllabusEditor = () => {
     setHasUnsavedChanges(true);
   }, []);
 
-  // Generar PDF optimizado
   const handleGeneratePDF = useCallback(async () => {
     if (!isValidSyllabus()) {
       showToast('❌ Complete los campos requeridos antes de generar el PDF', 'error');
@@ -220,7 +193,6 @@ const SyllabusEditor = () => {
     }
   }, [syllabusData, nodes]);
 
-  // Vista previa del PDF
   const handlePreviewPDF = useCallback(() => {
     if (!isValidSyllabus()) {
       showToast('❌ Complete los campos requeridos antes de la vista previa', 'error');
