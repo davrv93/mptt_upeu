@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import nodeTypes from '../node_types_schema.json';
 import { useTemplateState } from './useTemplateState';
+import { useDragAndDrop } from './useDragAndDrop';
 
 const LOCAL_STORAGE_KEY = 'mptt_template';
 const TEMPLATE_BACKUP_KEY = 'mptt_template_backup';
 
+// Funciones de utilidad del árbol
 const getNodeDepth = (nodes, nodeId, depth = 0) => {
   const node = nodes.find(n => n.id === nodeId);
   if (!node || node.parent === null) return depth;
@@ -91,8 +94,6 @@ export const useMPTTNodes = () => {
   // Estados principales
   const [nodes, setNodes] = useState(getInitialData);
   const [selected, setSelected] = useState(null);
-  const [draggedNode, setDraggedNode] = useState(null);
-  const [dropTarget, setDropTarget] = useState(null);
   const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
   const [lastSaved, setLastSaved] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -134,6 +135,38 @@ export const useMPTTNodes = () => {
       }
     }, 4000);
   }, []);
+
+  // Configuración del drag and drop para nodos
+  const nodesDragDrop = useDragAndDrop({
+    onDrop: useCallback((draggedNodeId, targetNodeId) => {
+      const descendants = getDescendants(nodes, draggedNodeId);
+      
+      // Validar que no se mueva un nodo a su propio descendiente
+      if (descendants.includes(targetNodeId)) {
+        return false;
+      }
+
+      // Actualizar el padre del nodo arrastrado
+      setNodes(prevNodes =>
+        prevNodes.map(n =>
+          n.id === draggedNodeId ? { ...n, parent: targetNodeId } : n
+        )
+      );
+
+      return true;
+    }, [nodes]),
+    
+    canDrop: useCallback((draggedNodeId, targetNodeId) => {
+      // No permitir drop en sí mismo
+      if (draggedNodeId === targetNodeId) return false;
+      
+      // No permitir drop en descendientes
+      const descendants = getDescendants(nodes, draggedNodeId);
+      return !descendants.includes(targetNodeId);
+    }, [nodes]),
+    
+    showToast
+  });
 
   // Función para guardar la plantilla
   const saveTemplate = useCallback((newNodes) => {
@@ -258,50 +291,16 @@ export const useMPTTNodes = () => {
 
   // Funciones para drag and drop
   const handleDragStart = useCallback((e, nodeId) => {
-    setDraggedNode(nodeId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  }, []);
+    // No permitir arrastrar el nodo root
+    if (nodeId === 1) return;
+    
+    nodesDragDrop.handleDragStart(e, nodeId, { type: 'node' });
+  }, [nodesDragDrop]);
 
-  const handleDragEnd = useCallback((e) => {
-    e.target.style.opacity = '1';
-    setDraggedNode(null);
-    setDropTarget(null);
-  }, []);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  const handleDragEnter = useCallback((e, nodeId) => {
-    e.preventDefault();
-    if (draggedNode && draggedNode !== nodeId) {
-      setDropTarget(nodeId);
-    }
-  }, [draggedNode]);
-
-  const handleDrop = useCallback((e, targetId) => {
-    e.preventDefault();
-
-    if (!draggedNode || draggedNode === targetId) return;
-
-    const descendants = getDescendants(nodes, draggedNode);
-    if (descendants.includes(targetId)) {
-      showToast('❌ No puedes mover un nodo a su propio descendiente', 'error');
-      return;
-    }
-
-    setNodes(prevNodes =>
-      prevNodes.map(n =>
-        n.id === draggedNode ? { ...n, parent: targetId } : n
-      )
-    );
-
-    showToast('✅ Nodo reubicado correctamente', 'success');
-    setDraggedNode(null);
-    setDropTarget(null);
-  }, [draggedNode, nodes, showToast]);
+  const handleDragEnd = nodesDragDrop.handleDragEnd;
+  const handleDragOver = nodesDragDrop.handleDragOver;
+  const handleDragEnter = nodesDragDrop.handleDragEnter;
+  const handleDrop = nodesDragDrop.handleDrop;
 
   // Función para cargar plantilla predefinida
   const loadPredefinedTemplate = useCallback((templateName) => {
@@ -440,8 +439,6 @@ export const useMPTTNodes = () => {
     // Estados
     nodes,
     selected,
-    draggedNode,
-    dropTarget,
     validationResults,
     lastSaved,
     isLoading,
@@ -457,11 +454,17 @@ export const useMPTTNodes = () => {
     moveNode,
 
     // Drag and drop
+    draggedNode: nodesDragDrop.draggedItem,
+    dropTarget: nodesDragDrop.dropTarget,
+    isDragging: nodesDragDrop.isDragging,
     handleDragStart,
     handleDragEnd,
     handleDragOver,
     handleDragEnter,
     handleDrop,
+    getNodeDragProps: nodesDragDrop.getDragProps,
+    getNodeDropProps: nodesDragDrop.getDropProps,
+    getNodeDropZoneStyles: nodesDragDrop.getDropZoneStyles,
 
     // Plantillas y persistencia
     loadPredefinedTemplate,
