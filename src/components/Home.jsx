@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTemplateState } from '../hooks/useTemplateState';
+import silabo_ejemplo from '../data/silabo_ejemplo.json'; 
+
 
 const Home = () => {
   const navigate = useNavigate();
@@ -86,58 +88,11 @@ const Home = () => {
   const loadExampleTemplate = async () => {
     setIsLoading(true);
     try {
-      const exampleTemplate = [
-        { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-        { 
-          id: 2, 
-          name: 'Información General', 
-          type: 'Información General', 
-          parent: null, 
-          attributes: {
-            "Facultad/EPG": "Facultad de Ingeniería",
-            "Programa de Estudio": "Ingeniería de Sistemas",
-            "Nombre de asignatura": "Programación Avanzada",
-            "Ciclo de estudio": "5to Ciclo",
-            "Número de créditos": "4",
-            "Duración": "16 semanas",
-            "Año y semestre académico": "2025-I"
-          }
-        },
-        { 
-          id: 3, 
-          name: 'Sumilla', 
-          type: 'Sumilla', 
-          parent: null, 
-          attributes: {
-            "Resumen de la asignatura": "Curso avanzado de programación que abarca estructuras de datos, algoritmos y paradigmas de programación moderna."
-          }
-        },
-        { 
-          id: 4, 
-          name: 'Competencias', 
-          type: 'Competencias', 
-          parent: null, 
-          attributes: {
-            "Competencia específica": "Desarrolla soluciones de software utilizando estructuras de datos y algoritmos eficientes",
-            "Competencia general": "Resuelve problemas complejos aplicando pensamiento lógico y metodologías de desarrollo"
-          }
-        },
-        { 
-          id: 5, 
-          name: 'Referencias', 
-          type: 'Referencias', 
-          parent: null, 
-          attributes: {
-            "Referencias básicas": "Cormen, T. et al. (2022). Introduction to Algorithms. 4th Edition. MIT Press.",
-            "Referencias complementarias": "Sedgewick, R. (2021). Algorithms in Java. Addison-Wesley."
-          }
-        }
-      ];
-      
+      const exampleTemplate = silabo_ejemplo;
+
       localStorage.setItem('mptt_template', JSON.stringify(exampleTemplate));
       localStorage.setItem('template_last_modified', new Date().toISOString());
       
-      // Disparar actualización global
       triggerTemplateUpdate();
       
       showToast('✅ Plantilla de ejemplo cargada correctamente', 'success');
