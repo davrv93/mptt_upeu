@@ -366,7 +366,6 @@ const SyllabusEditor = () => {
 
       return (
         <div key={node.id} className="mb-3">
-          {/* Header de la sección */}
           <div className="card"
             style={{
               border: '1px solid #CFD8ED',
