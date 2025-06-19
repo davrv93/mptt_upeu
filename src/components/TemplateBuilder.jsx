@@ -1,17 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import React, { useState, useEffect, useCallback } from 'react';
 import nodeTypes from '../node_types_schema.json';
-import { useTemplateState } from '../hooks/useTemplateState';
-
-const LOCAL_STORAGE_KEY = 'mptt_template';
-const TEMPLATE_BACKUP_KEY = 'mptt_template_backup';
-
-const getInitialData = () => {
-  const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-  return saved ? JSON.parse(saved) : [
-    { id: 1, name: 'Root', type: '', parent: null, attributes: {} }
-  ];
-};
+import { useMPTTNodes } from '../hooks/useMPTTNodes';
 
 const ModalPortal = ({ children, isOpen }) => {
   if (!isOpen) return null;
@@ -20,24 +10,6 @@ const ModalPortal = ({ children, isOpen }) => {
     children,
     document.body
   );
-};
-
-const createBackup = (nodes) => {
-  try {
-    localStorage.setItem(TEMPLATE_BACKUP_KEY, JSON.stringify({
-      data: nodes,
-      timestamp: new Date().toISOString(),
-      version: '2.0'
-    }));
-  } catch (error) {
-    console.error('Error creating backup:', error);
-  }
-};
-
-const getNodeDepth = (nodes, nodeId, depth = 0) => {
-  const node = nodes.find(n => n.id === nodeId);
-  if (!node || node.parent === null) return depth;
-  return getNodeDepth(nodes, node.parent, depth + 1);
 };
 
 const getNodeIcon = (nodeType) => {
@@ -80,97 +52,56 @@ const getNodeColor = (nodeType) => {
   return colors[nodeType] || '#276CA1';
 };
 
-const validateTemplate = (nodes) => {
-  const errors = [];
-  const warnings = [];
-
-  nodes.forEach(node => {
-    if (node.parent && !nodes.find(n => n.id === node.parent)) {
-      errors.push(`Nodo "${node.name}" tiene un padre inexistente`);
-    }
-  });
-
-  const recommendedSections = ['Información General', 'Sumilla', 'Referencias'];
-  recommendedSections.forEach(section => {
-    if (!nodes.find(n => n.type === section)) {
-      warnings.push(`Sección recomendada "${section}" no encontrada`);
-    }
-  });
-
-  nodes.forEach(node => {
-    const depth = getNodeDepth(nodes, node.id);
-    if (depth > 4) {
-      warnings.push(`Nodo "${node.name}" tiene demasiados niveles anidados (${depth})`);
-    }
-  });
-
-  return { errors, warnings };
-};
-
 const TemplateBuilder = () => {
-  const [nodes, setNodes] = useState(getInitialData);
-  const [selected, setSelected] = useState(null);
+  // Hook personalizado con toda la lógica MPTT
+  const {
+    // Estados
+    nodes,
+    selected,
+    draggedNode,
+    dropTarget,
+    validationResults,
+    lastSaved,
+    isLoading,
+    stats,
+
+    // Setters
+    setSelected,
+
+    // Funciones principales
+    addNode,
+    deleteNode,
+    moveNode,
+
+    // Drag and drop
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleDragEnter,
+    handleDrop,
+
+    // Plantillas y persistencia
+    loadPredefinedTemplate,
+    exportTemplate,
+    importTemplate,
+    restoreBackup,
+    checkLocalStorage,
+
+    // Utilidades
+    filterNodes,
+    utils,
+    showToast
+  } = useMPTTNodes();
+
+  // Estados locales para el formulario y UI
   const [nodeName, setNodeName] = useState('');
   const [nodeType, setNodeType] = useState('');
   const [attributes, setAttributes] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [draggedNode, setDraggedNode] = useState(null);
-  const [dropTarget, setDropTarget] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPreview, setShowPreview] = useState(false);
-  const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
-  const [lastSaved, setLastSaved] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
-  const { templateExists, templateStats, triggerTemplateUpdate } = useTemplateState();
-
-  const saveTemplate = useCallback((newNodes) => {
-    try {
-      createBackup(newNodes); 
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newNodes));
-      localStorage.setItem('template_last_modified', new Date().toISOString());
-      setLastSaved(new Date());
-
-      const validation = validateTemplate(newNodes);
-      setValidationResults(validation);
-
-      triggerTemplateUpdate();
-
-      console.log('✅ Plantilla guardada automáticamente');
-    } catch (error) {
-      console.error('❌ Error al guardar plantilla:', error);
-      showToast('❌ Error al guardar la plantilla', 'error');
-    }
-  }, [triggerTemplateUpdate]);
-
-
-  useEffect(() => {
-    if (nodes.length > 0) {
-      try {
-        createBackup(nodes);
-
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nodes));
-        localStorage.setItem('template_last_modified', new Date().toISOString());
-
-        setLastSaved(new Date());
-
-        const validation = validateTemplate(nodes);
-        setValidationResults(validation);
-
-        triggerTemplateUpdate();
-
-        console.log('✅ Plantilla guardada automáticamente:', nodes.length, 'nodos');
-
-        if (nodes.length > 1) {
-          console.log('📝 Cambios guardados en localStorage');
-        }
-      } catch (error) {
-        console.error('❌ Error al guardar plantilla:', error);
-        showToast('❌ Error al guardar la plantilla', 'error');
-      }
-    }
-  }, [nodes, triggerTemplateUpdate]);
-
+  // Actualizar atributos cuando cambia el tipo de nodo
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
       setAttributes(nodeTypes[nodeType].attributes.map(key => ({ key, value: '' })));
@@ -181,118 +112,24 @@ const TemplateBuilder = () => {
     }
   }, [nodeType]);
 
-  const showToast = (message, type = 'success') => {
-    const toastColors = {
-      success: 'alert-success',
-      error: 'alert-danger',
-      warning: 'alert-warning',
-      info: 'alert-info'
-    };
-
-    const toast = document.createElement('div');
-    toast.className = `alert ${toastColors[type]} position-fixed border-0 shadow-lg`;
-    toast.style.cssText = `
-      top: 90px; 
-      right: 20px; 
-      z-index: 9999; 
-      min-width: 320px;
-      border-radius: 12px;
-      animation: slideInRight 0.3s ease-out;
-    `;
-    toast.innerHTML = `
-      <div class="d-flex align-items-center">
-        <div class="me-2">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</div>
-        <div>${message}</div>
-      </div>
-    `;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      if (document.body.contains(toast)) {
-        toast.style.animation = 'slideOutRight 0.3s ease-in';
-        setTimeout(() => document.body.removeChild(toast), 300);
-      }
-    }, 4000);
-  };
-
+  // Manejadores del formulario
   const handleAddNode = (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    const nodeData = {
+      nodeType,
+      nodeName,
+      attributes,
+      selectedParent: selected
+    };
 
-    try {
-      if (nodeType === 'OTRO' && !nodeName.trim()) {
-        showToast('❌ El nombre es requerido para secciones personalizadas', 'error');
-        setIsLoading(false);
-        return;
-      }
-
-      const existingNode = nodes.find(n =>
-        n.parent === selected &&
-        n.type === nodeType &&
-        nodeType !== 'OTRO'
-      );
-
-      if (existingNode) {
-        showToast(`⚠️ Ya existe una sección "${nodeType}" bajo este nodo`, 'warning');
-        setIsLoading(false);
-        return;
-      }
-
-      const newId = Math.max(...nodes.map(n => n.id)) + 1;
-      const attrObj = Object.fromEntries(
-        attributes
-          .filter(a => a.key.trim() !== '')
-          .map(a => [a.key, a.value])
-      );
-
-      const newNode = {
-        id: newId,
-        name: nodeType === 'OTRO' ? nodeName.trim() : nodeType,
-        type: nodeType,
-        parent: selected,
-        attributes: attrObj
-      };
-
-      const updatedNodes = [...nodes, newNode];
-      setNodes(updatedNodes);
-
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedNodes));
-        localStorage.setItem('template_last_modified', new Date().toISOString());
-        
-        triggerTemplateUpdate();
-        
-        console.log('✅ Nodo guardado inmediatamente en localStorage');
-      } catch (saveError) {
-        console.error('❌ Error al guardar nodo:', saveError);
-        showToast('⚠️ Nodo creado pero no guardado. Intenta refrescar.', 'warning');
-      }
-
+    const success = addNode(nodeData);
+    
+    if (success) {
+      // Limpiar formulario
       setNodeName('');
       setNodeType('');
       setAttributes([]);
-
-      showToast(`✅ Sección "${newNode.name}" creada y guardada`, 'success');
-    } catch (error) {
-      showToast('❌ Error al crear la sección', 'error');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const checkLocalStorage = () => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        showToast(`📋 localStorage: ${parsed.length} nodos guardados`, 'info');
-      } else {
-        showToast('❌ No hay plantilla en localStorage', 'warning');
-      }
-    } catch (error) {
-      showToast('❌ Error al leer localStorage', 'error');
     }
   };
 
@@ -310,190 +147,23 @@ const TemplateBuilder = () => {
     setAttributes(attributes.filter((_, i) => i !== index));
   };
 
-  const handleDeleteNode = (id) => {
-    const nodeToDelete = nodes.find(n => n.id === id);
-    const descendants = getDescendants(nodes, id);
-    const totalToDelete = descendants.length + 1;
-
-    if (confirm(`¿Eliminar "${nodeToDelete.name}" y ${totalToDelete > 1 ? `sus ${descendants.length} nodos hijos` : 'este nodo'}?\n\nEsta acción no se puede deshacer.`)) {
-      const toDelete = [id, ...descendants];
-      setNodes(nodes.filter(n => !toDelete.includes(n.id)));
-      if (selected === id || toDelete.includes(selected)) {
-        setSelected(null);
-      }
-      showToast(`🗑️ Eliminados ${totalToDelete} nodo(s)`, 'warning');
-    }
-  };
-
-  const getDescendants = (all, parentId) => {
-    const children = all.filter(n => n.parent === parentId);
-    return children.flatMap(c => [c.id, ...getDescendants(all, c.id)]);
-  };
-
-  const moveNode = (id, direction) => {
-    const updated = [...nodes];
-    const index = updated.findIndex(n => n.id === id);
-    const parent = updated[index].parent;
-    const siblings = updated
-      .map((n, idx) => ({ ...n, _originalIndex: idx }))
-      .filter(n => n.parent === parent);
-    const siblingIndex = siblings.findIndex(n => n.id === id);
-    const targetIndex = direction === "up" ? siblingIndex - 1 : siblingIndex + 1;
-
-    if (targetIndex >= 0 && targetIndex < siblings.length) {
-      const currentIdx = siblings[siblingIndex]._originalIndex;
-      const swapIdx = siblings[targetIndex]._originalIndex;
-      [updated[currentIdx], updated[swapIdx]] = [updated[swapIdx], updated[currentIdx]];
-      setNodes(updated);
-      showToast(`📍 Nodo movido ${direction === 'up' ? 'arriba' : 'abajo'}`, 'info');
-    }
-  };
-
-  const handleDragStart = (e, nodeId) => {
-    setDraggedNode(nodeId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  };
-
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '1';
-    setDraggedNode(null);
-    setDropTarget(null);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDragEnter = (e, nodeId) => {
-    e.preventDefault();
-    if (draggedNode && draggedNode !== nodeId) {
-      setDropTarget(nodeId);
-    }
-  };
-
-  const handleDrop = (e, targetId) => {
-    e.preventDefault();
-
-    if (!draggedNode || draggedNode === targetId) return;
-
-    const descendants = getDescendants(nodes, draggedNode);
-    if (descendants.includes(targetId)) {
-      showToast('❌ No puedes mover un nodo a su propio descendiente', 'error');
-      return;
-    }
-
-    setNodes(prevNodes =>
-      prevNodes.map(n =>
-        n.id === draggedNode ? { ...n, parent: targetId } : n
-      )
-    );
-
-    showToast('✅ Nodo reubicado correctamente', 'success');
-    setDraggedNode(null);
-    setDropTarget(null);
-  };
-
-  const loadPredefinedTemplate = (templateName) => {
-    if (templates[templateName]) {
-      setNodes(templates[templateName]);
-      setSelected(null);
-      setShowTemplateModal(false);
-      
-      triggerTemplateUpdate();
-      
-      showToast(`✅ Plantilla "${templateName}" cargada correctamente`, 'success');
-    }
-  };
-
-  const exportTemplate = () => {
-    try {
-      const templateData = {
-        version: '2.0',
-        created: new Date().toISOString(),
-        nodes: nodes,
-        metadata: {
-          totalNodes: nodes.length,
-          sections: nodes.filter(n => n.parent === null && n.id !== 1).length
-        }
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(templateData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `plantilla_silabo_${new Date().getTime()}.json`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      showToast('📥 Plantilla exportada correctamente', 'success');
-    } catch (error) {
-      showToast('❌ Error al exportar la plantilla', 'error');
-    }
-  };
-
-  const importTemplate = (event) => {
+  const handleImportTemplate = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedData = JSON.parse(e.target.result);
-
-        let templateNodes;
-        if (importedData.version && importedData.nodes) {
-          templateNodes = importedData.nodes;
-        } else if (Array.isArray(importedData)) {
-          templateNodes = importedData; 
-        } else {
-          throw new Error('Formato de archivo no válido');
-        }
-
-        if (!Array.isArray(templateNodes) || templateNodes.length === 0) {
-          throw new Error('La plantilla está vacía o no es válida');
-        }
-
-        setNodes(templateNodes);
-        setSelected(null);
-        
-        triggerTemplateUpdate();
-        
-        showToast('📂 Plantilla importada correctamente', 'success');
-      } catch (error) {
-        showToast(`❌ Error: ${error.message}`, 'error');
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; 
+    await importTemplate(file);
+    event.target.value = ''; // Reset input
   };
 
-  const restoreBackup = () => {
-    try {
-      const backup = localStorage.getItem(TEMPLATE_BACKUP_KEY);
-      if (backup) {
-        const backupData = JSON.parse(backup);
-        if (confirm(`¿Restaurar backup del ${new Date(backupData.timestamp).toLocaleString()}?`)) {
-          setNodes(backupData.data);
-          setSelected(null);
-          
-          triggerTemplateUpdate();
-          
-          showToast('🔄 Backup restaurado correctamente', 'success');
-        }
-      } else {
-        showToast('❌ No hay backup disponible', 'error');
-      }
-    } catch (error) {
-      showToast('❌ Error al restaurar backup', 'error');
-    }
+  const handleLoadPredefinedTemplate = (templateName) => {
+    loadPredefinedTemplate(templateName);
+    setShowTemplateModal(false);
   };
 
-  const filteredNodes = nodes.filter(node =>
-    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    node.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Obtener nodos filtrados
+  const filteredNodes = filterNodes(searchTerm);
 
+  // Función para renderizar el árbol
   const renderTree = (nodes, parent = null, depth = 0) => {
     const childNodes = filteredNodes.filter(n => n.parent === parent);
     if (childNodes.length === 0) return null;
@@ -528,7 +198,6 @@ const TemplateBuilder = () => {
               >
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-center">
-
                     {/* Información del nodo */}
                     <div className="d-flex align-items-center flex-grow-1">
                       {/* Icono del tipo */}
@@ -766,7 +435,7 @@ const TemplateBuilder = () => {
                       {!isRoot && (
                         <button
                           className="btn btn-outline-danger btn-sm"
-                          onClick={() => handleDeleteNode(node.id)}
+                          onClick={() => deleteNode(node.id)}
                           title="Eliminar nodo"
                           style={{ borderRadius: '8px' }}
                         >
@@ -800,7 +469,6 @@ const TemplateBuilder = () => {
                   <small className="text-muted">Haz clic en el nodo Root para seleccionarlo como padre de las nuevas secciones.</small>
                 </div>
               </div>
-
             </div>
             <button
               className="btn btn-warning btn-sm"
@@ -812,7 +480,6 @@ const TemplateBuilder = () => {
               Seleccionar Nodo ROOT
             </button>
           </div>
-
         );
       }
 
@@ -898,11 +565,11 @@ const TemplateBuilder = () => {
                 <div className="col-md-6 text-md-end">
                   <div className="d-flex align-items-center justify-content-md-end gap-3">
                     <div className="text-center">
-                      <div className="h4 mb-0">{nodes.length}</div>
+                      <div className="h4 mb-0">{stats.totalNodes}</div>
                       <small>Nodos</small>
                     </div>
                     <div className="text-center">
-                      <div className="h4 mb-0">{nodes.filter(n => n.parent === null && n.id !== 1).length}</div>
+                      <div className="h4 mb-0">{stats.totalSections}</div>
                       <small>Secciones</small>
                     </div>
                     <div className="text-center">
@@ -965,7 +632,7 @@ const TemplateBuilder = () => {
                       <input
                         type="file"
                         accept=".json"
-                        onChange={importTemplate}
+                        onChange={handleImportTemplate}
                         className="d-none"
                       />
                     </label>
@@ -1230,23 +897,19 @@ const TemplateBuilder = () => {
                 <div className="row text-center g-3">
                   <div className="col-4">
                     <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-primary fw-bold fs-5">{nodes.length}</div>
+                      <div className="text-primary fw-bold fs-5">{stats.totalNodes}</div>
                       <small className="text-muted">Nodos</small>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-success fw-bold fs-5">
-                        {nodes.length > 1 ? Math.max(...nodes.map(n => getNodeDepth(nodes, n.id))) : 0}
-                      </div>
+                      <div className="text-success fw-bold fs-5">{stats.maxDepth}</div>
                       <small className="text-muted">Niveles</small>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-warning fw-bold fs-5">
-                        {nodes.filter(n => n.parent === null && n.id !== 1).length}
-                      </div>
+                      <div className="text-warning fw-bold fs-5">{stats.totalSections}</div>
                       <small className="text-muted">Secciones</small>
                     </div>
                   </div>
@@ -1281,9 +944,7 @@ const TemplateBuilder = () => {
         </div>
       </div>
 
-    
-
-     {/* Modal de plantillas predefinidas usando Portal */}
+      {/* Modal de plantillas predefinidas usando Portal */}
       <ModalPortal isOpen={showTemplateModal}>
         <div 
           className="modal fade show d-block" 
@@ -1331,7 +992,7 @@ const TemplateBuilder = () => {
                         </p>
                         <button 
                           className="btn btn-primary"
-                          onClick={() => loadPredefinedTemplate('basico')}
+                          onClick={() => handleLoadPredefinedTemplate('basico')}
                           style={{ borderRadius: '8px' }}
                         >
                           Usar Plantilla Básica
@@ -1349,7 +1010,7 @@ const TemplateBuilder = () => {
                         </p>
                         <button 
                           className="btn btn-success"
-                          onClick={() => loadPredefinedTemplate('completo')}
+                          onClick={() => handleLoadPredefinedTemplate('completo')}
                           style={{ borderRadius: '8px' }}
                         >
                           Usar Plantilla Completa
@@ -1431,19 +1092,15 @@ const TemplateBuilder = () => {
                     <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
                       <div className="row text-center g-3">
                         <div className="col-4">
-                          <div className="fw-bold text-primary fs-4">{nodes.length}</div>
+                          <div className="fw-bold text-primary fs-4">{stats.totalNodes}</div>
                           <small className="text-muted">Total Nodos</small>
                         </div>
                         <div className="col-4">
-                          <div className="fw-bold text-success fs-4">
-                            {nodes.filter(n => n.parent === null && n.id !== 1).length}
-                          </div>
+                          <div className="fw-bold text-success fs-4">{stats.totalSections}</div>
                           <small className="text-muted">Secciones Principales</small>
                         </div>
                         <div className="col-4">
-                          <div className="fw-bold text-info fs-4">
-                            {nodes.reduce((total, node) => total + Object.keys(node.attributes || {}).length, 0)}
-                          </div>
+                          <div className="fw-bold text-info fs-4">{stats.totalFields}</div>
                           <small className="text-muted">Total Campos</small>
                         </div>
                       </div>
