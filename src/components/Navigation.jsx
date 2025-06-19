@@ -214,7 +214,6 @@ const Navigation = () => {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                 borderRadius: '12px'
               }}>
-                {/* User info header */}
                 <li className="px-3 py-3 border-bottom">
                   <div className="d-flex align-items-center">
                     <div className="me-3">
