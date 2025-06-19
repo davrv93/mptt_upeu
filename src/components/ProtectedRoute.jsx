@@ -57,7 +57,7 @@ const LoginScreen = () => {
                 {/* Title */}
                 <h2 className="fw-bold text-primary mb-3">Editor de Sílabo</h2>
                 <p className="text-muted mb-4">
-                  Sistema Académico Profesional para la gestión de sílabos
+                  Sistema Académico para la gestión de sílabos
                 </p>
 
                 {/* Features */}
@@ -76,7 +76,7 @@ const LoginScreen = () => {
                         <div className="me-3 text-success">
                           <i className="fas fa-check-circle"></i>
                         </div>
-                        <small className="text-muted">Edición colaborativa de contenido</small>
+                        <small className="text-muted">Edición de contenido</small>
                       </div>
                     </div>
                     <div className="col-12">
@@ -84,7 +84,7 @@ const LoginScreen = () => {
                         <div className="me-3 text-success">
                           <i className="fas fa-check-circle"></i>
                         </div>
-                        <small className="text-muted">Exportación a PDF profesional</small>
+                        <small className="text-muted">Exportación a PDF</small>
                       </div>
                     </div>
                   </div>
@@ -103,13 +103,13 @@ const LoginScreen = () => {
                   }}
                 >
                   <i className="fas fa-sign-in-alt me-2"></i>
-                  Acceder con OAuth2
+                  Iniciar sesión con lamb-academic
                 </button>
 
                 {/* Info */}
                 <small className="text-muted">
                   <i className="fas fa-shield-alt me-1"></i>
-                  Acceso seguro con autenticación institucional
+                  Acceso con autenticación institucional
                 </small>
               </div>
             </div>
@@ -117,7 +117,7 @@ const LoginScreen = () => {
             {/* Footer */}
             <div className="text-center mt-4">
               <small className="text-muted">
-                © 2025 Editor de Sílabo - Sistema Académico Profesional
+                © 2025 Editor de Sílabo - Sistema Académico
                 <span className="mx-2">•</span>
                 <span className="text-success">v2.0</span>
               </small>
