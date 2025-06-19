@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useCallback } from 'react';
 import nodeTypes from '../node_types_schema.json';
+import { useTemplateState } from '../hooks/useTemplateState';
 
 const LOCAL_STORAGE_KEY = 'mptt_template';
 const TEMPLATE_BACKUP_KEY = 'mptt_template_backup';
@@ -129,6 +130,9 @@ const TemplateBuilder = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
+  // Usar el hook personalizado
+  const { templateExists, templateStats, triggerTemplateUpdate } = useTemplateState();
+
   const saveTemplate = useCallback((newNodes) => {
     try {
       createBackup(newNodes); // Crear backup antes de guardar
@@ -140,12 +144,15 @@ const TemplateBuilder = () => {
       const validation = validateTemplate(newNodes);
       setValidationResults(validation);
 
+      // Disparar actualización global
+      triggerTemplateUpdate();
+
       console.log('✅ Plantilla guardada automáticamente');
     } catch (error) {
       console.error('❌ Error al guardar plantilla:', error);
       showToast('❌ Error al guardar la plantilla', 'error');
     }
-  }, []);
+  }, [triggerTemplateUpdate]);
 
 
   useEffect(() => {
@@ -165,6 +172,9 @@ const TemplateBuilder = () => {
         const validation = validateTemplate(nodes);
         setValidationResults(validation);
 
+        // Disparar actualización global
+        triggerTemplateUpdate();
+
         console.log('✅ Plantilla guardada automáticamente:', nodes.length, 'nodos');
 
         // Toast solo para cambios significativos (no en la carga inicial)
@@ -176,7 +186,7 @@ const TemplateBuilder = () => {
         showToast('❌ Error al guardar la plantilla', 'error');
       }
     }
-  }, [nodes]);
+  }, [nodes, triggerTemplateUpdate]);
 
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
@@ -277,6 +287,10 @@ const TemplateBuilder = () => {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedNodes));
         localStorage.setItem('template_last_modified', new Date().toISOString());
+        
+        // Disparar actualización global
+        triggerTemplateUpdate();
+        
         console.log('✅ Nodo guardado inmediatamente en localStorage');
       } catch (saveError) {
         console.error('❌ Error al guardar nodo:', saveError);
@@ -542,6 +556,9 @@ const TemplateBuilder = () => {
       setNodes(templates[templateName]);
       setSelected(null);
       setShowTemplateModal(false);
+      
+      triggerTemplateUpdate();
+      
       showToast(`✅ Plantilla "${templateName}" cargada correctamente`, 'success');
     }
   };
@@ -597,6 +614,10 @@ const TemplateBuilder = () => {
 
         setNodes(templateNodes);
         setSelected(null);
+        
+        // Disparar actualización global
+        triggerTemplateUpdate();
+        
         showToast('📂 Plantilla importada correctamente', 'success');
       } catch (error) {
         showToast(`❌ Error: ${error.message}`, 'error');
@@ -614,6 +635,10 @@ const TemplateBuilder = () => {
         if (confirm(`¿Restaurar backup del ${new Date(backupData.timestamp).toLocaleString()}?`)) {
           setNodes(backupData.data);
           setSelected(null);
+          
+          // Disparar actualización global
+          triggerTemplateUpdate();
+          
           showToast('🔄 Backup restaurado correctamente', 'success');
         }
       } else {
@@ -710,7 +735,6 @@ const TemplateBuilder = () => {
                           </div>
                         )}
 
-                        {/* Información adicional */}
                         {/* Renderizar nodos hijos con contenedor visual mejorado */}
                         {hasChildren && (
                           <div className="children-container position-relative mt-3">
@@ -913,13 +937,6 @@ const TemplateBuilder = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Renderizar nodos hijos */}
-              {/* {hasChildren && (
-                <div className="children-nodes">
-                  {renderTree(nodes, node.id, depth + 1)}
-                </div>
-              )} */}
             </div>
           );
         })}
