@@ -84,19 +84,12 @@ const validateTemplate = (nodes) => {
   const errors = [];
   const warnings = [];
 
-  // Verificar estructura básica
-  if (!nodes.find(n => n.id === 1)) {
-    errors.push('Falta el nodo raíz (Root)');
-  }
-
-  // Verificar nodos huérfanos
   nodes.forEach(node => {
     if (node.parent && !nodes.find(n => n.id === node.parent)) {
       errors.push(`Nodo "${node.name}" tiene un padre inexistente`);
     }
   });
 
-  // Verificar secciones recomendadas
   const recommendedSections = ['Información General', 'Sumilla', 'Referencias'];
   recommendedSections.forEach(section => {
     if (!nodes.find(n => n.type === section)) {
@@ -104,7 +97,6 @@ const validateTemplate = (nodes) => {
     }
   });
 
-  // Verificar profundidad excesiva
   nodes.forEach(node => {
     const depth = getNodeDepth(nodes, node.id);
     if (depth > 4) {
@@ -130,21 +122,18 @@ const TemplateBuilder = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
-  // Usar el hook personalizado
   const { templateExists, templateStats, triggerTemplateUpdate } = useTemplateState();
 
   const saveTemplate = useCallback((newNodes) => {
     try {
-      createBackup(newNodes); // Crear backup antes de guardar
+      createBackup(newNodes); 
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newNodes));
       localStorage.setItem('template_last_modified', new Date().toISOString());
       setLastSaved(new Date());
 
-      // Validar después de guardar
       const validation = validateTemplate(newNodes);
       setValidationResults(validation);
 
-      // Disparar actualización global
       triggerTemplateUpdate();
 
       console.log('✅ Plantilla guardada automáticamente');
@@ -158,26 +147,20 @@ const TemplateBuilder = () => {
   useEffect(() => {
     if (nodes.length > 0) {
       try {
-        // Crear backup antes de guardar
         createBackup(nodes);
 
-        // Guardar en localStorage
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nodes));
         localStorage.setItem('template_last_modified', new Date().toISOString());
 
-        // Actualizar estado
         setLastSaved(new Date());
 
-        // Validar después de guardar
         const validation = validateTemplate(nodes);
         setValidationResults(validation);
 
-        // Disparar actualización global
         triggerTemplateUpdate();
 
         console.log('✅ Plantilla guardada automáticamente:', nodes.length, 'nodos');
 
-        // Toast solo para cambios significativos (no en la carga inicial)
         if (nodes.length > 1) {
           console.log('📝 Cambios guardados en localStorage');
         }
@@ -238,20 +221,12 @@ const TemplateBuilder = () => {
     setIsLoading(true);
 
     try {
-      // Validaciones
-      if (!selected) {
-        showToast('❌ Selecciona un nodo padre primero', 'error');
-        setIsLoading(false);
-        return;
-      }
-
       if (nodeType === 'OTRO' && !nodeName.trim()) {
         showToast('❌ El nombre es requerido para secciones personalizadas', 'error');
         setIsLoading(false);
         return;
       }
 
-      // Verificar duplicados del mismo tipo bajo el mismo padre
       const existingNode = nodes.find(n =>
         n.parent === selected &&
         n.type === nodeType &&
@@ -279,16 +254,13 @@ const TemplateBuilder = () => {
         attributes: attrObj
       };
 
-      // Actualizar estado
       const updatedNodes = [...nodes, newNode];
       setNodes(updatedNodes);
 
-      // Guardado forzado inmediato
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedNodes));
         localStorage.setItem('template_last_modified', new Date().toISOString());
         
-        // Disparar actualización global
         triggerTemplateUpdate();
         
         console.log('✅ Nodo guardado inmediatamente en localStorage');
@@ -297,7 +269,6 @@ const TemplateBuilder = () => {
         showToast('⚠️ Nodo creado pero no guardado. Intenta refrescar.', 'warning');
       }
 
-      // Reset form
       setNodeName('');
       setNodeType('');
       setAttributes([]);
@@ -316,14 +287,11 @@ const TemplateBuilder = () => {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('📋 Estado actual en localStorage:', parsed.length, 'nodos');
         showToast(`📋 localStorage: ${parsed.length} nodos guardados`, 'info');
       } else {
-        console.log('❌ No hay datos en localStorage');
         showToast('❌ No hay plantilla en localStorage', 'warning');
       }
     } catch (error) {
-      console.error('❌ Error al leer localStorage:', error);
       showToast('❌ Error al leer localStorage', 'error');
     }
   };
@@ -381,7 +349,6 @@ const TemplateBuilder = () => {
     }
   };
 
-  // Drag and Drop handlers
   const handleDragStart = (e, nodeId) => {
     setDraggedNode(nodeId);
     e.dataTransfer.effectAllowed = 'move';
@@ -411,14 +378,12 @@ const TemplateBuilder = () => {
 
     if (!draggedNode || draggedNode === targetId) return;
 
-    // Verificar que no se mueva a un descendiente (evitar ciclos)
     const descendants = getDescendants(nodes, draggedNode);
     if (descendants.includes(targetId)) {
       showToast('❌ No puedes mover un nodo a su propio descendiente', 'error');
       return;
     }
 
-    // Actualizar el padre del nodo arrastrado
     setNodes(prevNodes =>
       prevNodes.map(n =>
         n.id === draggedNode ? { ...n, parent: targetId } : n
@@ -431,127 +396,6 @@ const TemplateBuilder = () => {
   };
 
   const loadPredefinedTemplate = (templateName) => {
-    const templates = {
-      'basico': [
-        { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-        {
-          id: 2,
-          name: 'Información General',
-          type: 'Información General',
-          parent: null,
-          attributes: {
-            "Facultad/EPG": "",
-            "Programa de Estudio": "",
-            "Nombre de asignatura": "",
-            "Ciclo de estudio": "",
-            "Número de créditos": "",
-            "Duración": ""
-          }
-        },
-        {
-          id: 3,
-          name: 'Sumilla',
-          type: 'Sumilla',
-          parent: null,
-          attributes: {
-            "Resumen de la asignatura": ""
-          }
-        },
-        {
-          id: 4,
-          name: 'Referencias',
-          type: 'Referencias',
-          parent: null,
-          attributes: {
-            "Referencias básicas": "",
-            "Referencias complementarias": ""
-          }
-        }
-      ],
-      'completo': [
-        { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-        {
-          id: 2,
-          name: 'Información General',
-          type: 'Información General',
-          parent: null,
-          attributes: {
-            "Facultad/EPG": "",
-            "Programa de Estudio": "",
-            "Nombre de asignatura": "",
-            "Tipo de estudio": "",
-            "Ciclo de estudio": "",
-            "Año y semestre académico": "",
-            "Número de créditos": "",
-            "Duración": "",
-            "Nota mínima aprobatoria": ""
-          }
-        },
-        {
-          id: 3,
-          name: 'Docentes',
-          type: 'Docentes',
-          parent: null,
-          attributes: {
-            "Docente titular": "",
-            "Docente adjunto": "",
-            "Docente de práctica": ""
-          }
-        },
-        {
-          id: 4,
-          name: 'Sumilla',
-          type: 'Sumilla',
-          parent: null,
-          attributes: {
-            "Resumen de la asignatura": ""
-          }
-        },
-        {
-          id: 5,
-          name: 'Competencias',
-          type: 'Competencias',
-          parent: null,
-          attributes: {
-            "Competencia específica": "",
-            "Competencia general": ""
-          }
-        },
-        {
-          id: 6,
-          name: 'Unidades de Aprendizaje',
-          type: 'Unidades de Aprendizaje',
-          parent: null,
-          attributes: {
-            "Nombre de unidad": "",
-            "Resultado de unidad": "",
-            "Contenido": ""
-          }
-        },
-        {
-          id: 7,
-          name: 'Evaluación',
-          type: 'Evaluación',
-          parent: null,
-          attributes: {
-            "Estrategia": "",
-            "Descripción": "",
-            "Ponderado (%)": ""
-          }
-        },
-        {
-          id: 8,
-          name: 'Referencias',
-          type: 'Referencias',
-          parent: null,
-          attributes: {
-            "Referencias básicas": "",
-            "Referencias complementarias": ""
-          }
-        }
-      ]
-    };
-
     if (templates[templateName]) {
       setNodes(templates[templateName]);
       setSelected(null);
@@ -597,17 +441,15 @@ const TemplateBuilder = () => {
       try {
         const importedData = JSON.parse(e.target.result);
 
-        // Verificar si es formato nuevo o legacy
         let templateNodes;
         if (importedData.version && importedData.nodes) {
           templateNodes = importedData.nodes;
         } else if (Array.isArray(importedData)) {
-          templateNodes = importedData; // Formato legacy
+          templateNodes = importedData; 
         } else {
           throw new Error('Formato de archivo no válido');
         }
 
-        // Validar estructura básica
         if (!Array.isArray(templateNodes) || templateNodes.length === 0) {
           throw new Error('La plantilla está vacía o no es válida');
         }
@@ -615,7 +457,6 @@ const TemplateBuilder = () => {
         setNodes(templateNodes);
         setSelected(null);
         
-        // Disparar actualización global
         triggerTemplateUpdate();
         
         showToast('📂 Plantilla importada correctamente', 'success');
@@ -624,7 +465,7 @@ const TemplateBuilder = () => {
       }
     };
     reader.readAsText(file);
-    event.target.value = ''; // Reset input
+    event.target.value = ''; 
   };
 
   const restoreBackup = () => {
@@ -636,7 +477,6 @@ const TemplateBuilder = () => {
           setNodes(backupData.data);
           setSelected(null);
           
-          // Disparar actualización global
           triggerTemplateUpdate();
           
           showToast('🔄 Backup restaurado correctamente', 'success');
