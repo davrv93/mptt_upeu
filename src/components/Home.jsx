@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTemplateState } from '../hooks/useTemplateState';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [hasTemplate, setHasTemplate] = useState(false);
-  const [templateStats, setTemplateStats] = useState({ nodes: 0, sections: 0, lastModified: null });
   const [syllabusData, setSyllabusData] = useState({});
   const [completionStats, setCompletionStats] = useState({ total: 0, filled: 0, percentage: 0 });
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Usar el hook personalizado
+  const { templateExists: hasTemplate, templateStats, triggerTemplateUpdate } = useTemplateState();
+
   useEffect(() => {
     const initializeData = () => {
       setIsLoading(true);
       
-      const template = localStorage.getItem('mptt_template');
       const syllabusValues = localStorage.getItem('syllabus_data');
       const hasVisited = localStorage.getItem('has_visited');
       
@@ -23,26 +24,13 @@ const Home = () => {
         localStorage.setItem('has_visited', 'true');
       }
 
-      if (template) {
+      // Cargar datos del sílabo si existen
+      if (syllabusValues) {
         try {
-          const parsed = JSON.parse(template);
-          const stats = {
-            nodes: parsed.length,
-            sections: parsed.filter(n => n.parent === null && n.id !== 1).length,
-            lastModified: localStorage.getItem('template_last_modified') || new Date().toISOString()
-          };
-          setHasTemplate(true);
-          setTemplateStats(stats);
-
-          // Calculate completion if syllabus data exists
-          if (syllabusValues) {
-            const syllabusData = JSON.parse(syllabusValues);
-            setSyllabusData(syllabusData);
-            calculateCompletion(parsed, syllabusData);
-          }
+          const syllabusData = JSON.parse(syllabusValues);
+          setSyllabusData(syllabusData);
         } catch (error) {
-          console.error('Error parsing template:', error);
-          showToast('❌ Error al cargar la plantilla', 'error');
+          console.error('Error parsing syllabus data:', error);
         }
       }
       
@@ -51,6 +39,27 @@ const Home = () => {
 
     initializeData();
   }, []);
+
+  // Calcular progreso cuando cambie la plantilla o los datos del sílabo
+  useEffect(() => {
+    if (hasTemplate && Object.keys(syllabusData).length > 0) {
+      const template = JSON.parse(localStorage.getItem('mptt_template'));
+      calculateCompletion(template, syllabusData);
+    } else if (hasTemplate) {
+      // Si hay plantilla pero no datos, recalcular cuando se carguen los datos
+      const syllabusValues = localStorage.getItem('syllabus_data');
+      if (syllabusValues) {
+        try {
+          const syllabusData = JSON.parse(syllabusValues);
+          setSyllabusData(syllabusData);
+          const template = JSON.parse(localStorage.getItem('mptt_template'));
+          calculateCompletion(template, syllabusData);
+        } catch (error) {
+          console.error('Error loading syllabus data:', error);
+        }
+      }
+    }
+  }, [hasTemplate, templateStats, syllabusData]);
 
   const calculateCompletion = (template, syllabusData) => {
     let totalFields = 0;
@@ -128,12 +137,8 @@ const Home = () => {
       localStorage.setItem('mptt_template', JSON.stringify(exampleTemplate));
       localStorage.setItem('template_last_modified', new Date().toISOString());
       
-      setHasTemplate(true);
-      setTemplateStats({
-        nodes: exampleTemplate.length,
-        sections: exampleTemplate.filter(n => n.parent === null && n.id !== 1).length,
-        lastModified: new Date().toISOString()
-      });
+      // Disparar actualización global
+      triggerTemplateUpdate();
       
       showToast('✅ Plantilla de ejemplo cargada correctamente', 'success');
     } catch (error) {
@@ -153,10 +158,14 @@ const Home = () => {
       localStorage.removeItem('mptt_template');
       localStorage.removeItem('syllabus_data');
       localStorage.removeItem('template_last_modified');
-      setHasTemplate(false);
-      setTemplateStats({ nodes: 0, sections: 0, lastModified: null });
+      
+      // Limpiar estados locales
       setSyllabusData({});
       setCompletionStats({ total: 0, filled: 0, percentage: 0 });
+      
+      // Disparar actualización global
+      triggerTemplateUpdate();
+      
       showToast('🗑️ Todos los datos eliminados correctamente', 'warning');
     }
   };
@@ -193,12 +202,8 @@ const Home = () => {
         localStorage.setItem('mptt_template', JSON.stringify(template));
         localStorage.setItem('template_last_modified', new Date().toISOString());
         
-        setHasTemplate(true);
-        setTemplateStats({
-          nodes: template.length,
-          sections: template.filter(n => n.parent === null && n.id !== 1).length,
-          lastModified: new Date().toISOString()
-        });
+        // Disparar actualización global
+        triggerTemplateUpdate();
         
         showToast('📂 Plantilla importada correctamente', 'success');
       } catch (error) {
@@ -206,6 +211,7 @@ const Home = () => {
       }
     };
     reader.readAsText(file);
+    event.target.value = ''; // Reset input
   };
 
   const showToast = (message, type = 'success') => {
