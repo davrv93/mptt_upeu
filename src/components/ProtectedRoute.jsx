@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../auth/AuthContext';
 
-// Loading component para mostrar mientras se valida la sesión
 const AuthLoadingScreen = () => (
   <div className="min-vh-100 d-flex align-items-center justify-content-center">
     <div className="text-center" style={{ color: '#276CA1' }}>
@@ -12,7 +11,6 @@ const AuthLoadingScreen = () => (
   </div>
 );
 
-// Login screen para usuarios no autenticados
 const LoginScreen = () => {
   const { authenticate } = useAuth();
 
@@ -21,7 +19,6 @@ const LoginScreen = () => {
       background: 'linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     }}>
-      {/* Background pattern */}
       <div
         className="position-fixed w-100 h-100"
         style={{
@@ -132,21 +129,17 @@ const LoginScreen = () => {
   );
 };
 
-// Componente principal para proteger rutas
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  // Mostrar loading mientras se valida la sesión
   if (loading) {
     return <AuthLoadingScreen />;
   }
 
-  // Si no está autenticado, mostrar pantalla de login
   if (!isAuthenticated) {
     return <LoginScreen />;
   }
 
-  // Si está autenticado, mostrar el contenido protegido
   return children;
 };
 
