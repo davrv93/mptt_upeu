@@ -5,6 +5,9 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 };
 
@@ -63,13 +66,13 @@ const storage = {
 
 const authAPI = {
   validateToken: async (tokenValue) => {
-    const apiUrl = `${environment.apiUrls.auth}/api/oauth/valid-tokens-oauth`;    
+    const apiUrl = `${environment.apiUrls.auth}/api/oauth/valid-tokens-oauth`;
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': tokenValue
+        'Authorization': tokenValue 
       },
       body: JSON.stringify({ 
         token: tokenValue 
@@ -84,14 +87,14 @@ const authAPI = {
     return response.json();
   },
 
-  getUserInfo: async (token) => {
+  getUserInfo: async (tokenValue) => {
     const apiUrl = `${environment.apiUrls.auth}/api/user/info`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': token
+        'Authorization': tokenValue 
       },
       body: JSON.stringify({
         id_padre: environment.module_id
@@ -135,15 +138,23 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const initializeAuth = () => {
+  const initializeAuth = async () => {
     try {
       const storedToken = storage.get(STORAGE_KEYS.TOKEN);
       const storedUser = storage.getJSON(STORAGE_KEYS.USER);
 
       if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(storedUser);
-        setIsAuthenticated(true);
+        const tokenInfo = storedUser.token_info;
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        if (tokenInfo && tokenInfo.exp && tokenInfo.exp > currentTime) {
+          setToken(storedToken);
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        } else {
+          console.log('Token expired, clearing auth data');
+          clearAuth();
+        }
       }
     } catch (error) {
       console.error('Error restoring session:', error);
