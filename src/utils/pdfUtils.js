@@ -1,10 +1,6 @@
-// pdfUtils.js - Utilidades para generación de PDF (Actualizado)
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-/**
- * Configuración por defecto del PDF
- */
 export const PDF_CONFIG = {
   format: 'a4',
   orientation: 'portrait',
@@ -21,9 +17,7 @@ export const PDF_CONFIG = {
   allowTaint: true
 };
 
-/**
- * Estilos CSS para el PDF
- */
+
 export const PDF_STYLES = `
   .pdf-container {
     background: white;
@@ -163,19 +157,15 @@ const extractBasicInfo = (syllabusData, nodes) => {
   let program = 'EP Medicina';
   let courseName = 'Biofísica';
 
-  // Buscar en todos los nodos por información básica
   nodes.forEach(node => {
     const nodeData = syllabusData[node.id];
     if (nodeData) {
-      // Facultad
       if (nodeData['Facultad/EPG']) faculty = nodeData['Facultad/EPG'];
       if (nodeData['Facultad']) faculty = nodeData['Facultad'];
 
-      // Programa
       if (nodeData['Programa de Estudio']) program = nodeData['Programa de Estudio'];
       if (nodeData['Programa']) program = nodeData['Programa'];
 
-      // Nombre del curso
       if (nodeData['Nombre de asignatura']) courseName = nodeData['Nombre de asignatura'];
       if (nodeData['Asignatura']) courseName = nodeData['Asignatura'];
       if (nodeData['Curso']) courseName = nodeData['Curso'];
@@ -194,7 +184,6 @@ const extractBasicInfo = (syllabusData, nodes) => {
 export const generatePDFHTML = (syllabusData, nodes) => {
   const basicInfo = extractBasicInfo(syllabusData, nodes);
 
-  // Filtrar nodos válidos (excluir Root)
   const rootChildren = nodes.filter(node => node.parent === 1 && node.id !== 1);
 
   let html = `
@@ -207,12 +196,10 @@ export const generatePDFHTML = (syllabusData, nodes) => {
       </div>
   `;
 
-  // Generar secciones principales
   rootChildren.forEach(section => {
     html += generateSectionHTML(section, syllabusData, nodes);
   });
 
-  // Footer del documento
   html += `
       <!-- Footer del documento -->
       <div class="pdf-footer">
@@ -241,12 +228,10 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
   let html = `<div class="pdf-section">`;
   html += `<div class="pdf-section-title">${section.name}</div>`;
 
-  // Campos de la sección actual
   if (section.attributes && Object.keys(section.attributes).length > 0) {
     Object.entries(section.attributes).forEach(([key, defaultValue]) => {
       const value = syllabusData[section.id]?.[key] || defaultValue || '';
 
-      // Solo mostrar campos que tienen contenido
       if (value && value.toString().trim() !== '') {
         html += `
           <div class="pdf-field">
@@ -258,7 +243,6 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
     });
   }
 
-  // Subsecciones
   const subsections = nodes.filter(node => node.parent === section.id);
   subsections.forEach(subsection => {
     html += `<div class="pdf-subsection">`;
@@ -268,7 +252,6 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
       Object.entries(subsection.attributes).forEach(([key, defaultValue]) => {
         const value = syllabusData[subsection.id]?.[key] || defaultValue || '';
 
-        // Solo mostrar campos que tienen contenido
         if (value && value.toString().trim() !== '') {
           html += `
             <div class="pdf-field">
@@ -280,7 +263,6 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
       });
     }
 
-    // Sub-subsecciones (nivel 3)
     const subSubsections = nodes.filter(node => node.parent === subsection.id);
     subSubsections.forEach(subSub => {
       html += generateSectionHTML(subSub, syllabusData, nodes);
@@ -330,7 +312,6 @@ const formatFieldValue = (value) => {
  */
 export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options = {}) => {
   try {
-    // Crear contenedor temporal
     const tempContainer = document.createElement('div');
     tempContainer.innerHTML = `
       <style>${PDF_STYLES}</style>
@@ -344,7 +325,6 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
 
     document.body.appendChild(tempContainer);
 
-    // Configuración de html2canvas
     const canvas = await html2canvas(tempContainer, {
       scale: options.scale || PDF_CONFIG.scale,
       useCORS: options.useCORS || PDF_CONFIG.useCORS,
@@ -356,17 +336,14 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
       scrollY: 0
     });
 
-    // Limpiar contenedor temporal
     document.body.removeChild(tempContainer);
 
-    // Crear PDF
     const pdf = new jsPDF({
       orientation: options.orientation || PDF_CONFIG.orientation,
       unit: options.unit || PDF_CONFIG.unit,
       format: options.format || PDF_CONFIG.format
     });
 
-    // Calcular dimensiones
     const imgWidth = 210; // A4 width in mm
     const pageHeight = 295; // A4 height in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -374,7 +351,6 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
 
     let position = 0;
 
-    // Agregar imagen al PDF
     pdf.addImage(
       canvas.toDataURL('image/png'),
       'PNG',
@@ -388,7 +364,6 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
 
     heightLeft -= pageHeight;
 
-    // Agregar páginas adicionales si es necesario
     while (heightLeft >= 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
@@ -405,7 +380,6 @@ export const generatePDF = async (htmlContent, filename = 'silabo.pdf', options 
       heightLeft -= pageHeight;
     }
 
-    // Guardar PDF
     pdf.save(filename);
 
     return {
@@ -476,8 +450,8 @@ export const previewPDF = (syllabusData, nodes) => {
           border-radius: 4px;
           cursor: pointer;
         }
-        .btn-print { background: #007bff; color: white; }
-        .btn-close { background: #6c757d; color: white; }
+        .btn-print { background: #003264; color: white; }
+        .btn-close { background: #DB0000; color: white; }
       </style>
     </head>
     <body>
