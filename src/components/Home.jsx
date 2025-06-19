@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthTest from './AuthTest';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -15,7 +14,6 @@ const Home = () => {
     const initializeData = () => {
       setIsLoading(true);
       
-      // Check template
       const template = localStorage.getItem('mptt_template');
       const syllabusValues = localStorage.getItem('syllabus_data');
       const hasVisited = localStorage.getItem('has_visited');
@@ -617,8 +615,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-      <AuthTest />
 
       <style jsx>{`
         .hover-card {
