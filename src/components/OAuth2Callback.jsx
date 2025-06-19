@@ -25,13 +25,11 @@ const OAuth2Callback = () => {
         const success = await validateAndStoreToken(result.getToken());
         
         if (success) {
-          console.log('✅ Token validado exitosamente');
-          setTimeout(() => navigate(result.getRedirect()), 2000);
+          setTimeout(() => navigate(result.getRedirect()), 6000);
         } else {
           throw new Error('Token validation failed');
         }
       } else {
-        console.log('❌ Error detectado:', result.getError());
         throw new Error(result.getError() || 'OAuth failed');
       }
 
@@ -70,7 +68,6 @@ const OAuth2Callback = () => {
     return debugInfo;
   };
 
-  // 🎯 PARSEADOR MEJORADO CON DEBUG COMPLETO
   const parseOAuthResult = () => {
     
     const hash = window.location.hash.substring(1);
@@ -86,7 +83,6 @@ const OAuth2Callback = () => {
       }
     }
     
-    // Extraer campos OAuth2 estándar
     const accessToken = params.get('access_token');
     const tokenType = params.get('token_type');
     const expiresIn = params.get('expires_in');
@@ -113,14 +109,8 @@ const OAuth2Callback = () => {
         default:
           console.log('🔍 📋 CAUSA: Error OAuth2 desconocido');
       }
-    } else if (accessToken) {
-      console.log('🔍 ✅ TIPO: SUCCESS - TOKEN RECIBIDO');
-      console.log(`🔍 ✅ Token: ${accessToken.substring(0, 20)}...`);
-    } else {
-      console.log('🔍 ❓ TIPO: DESCONOCIDO - Ni error ni token');
-    }
+    } 
     
-    // Crear objeto de resultado
     const result = {
       isSuccess: () => !error && !!accessToken,
       getToken: () => accessToken,
@@ -146,7 +136,6 @@ const OAuth2Callback = () => {
     return result;
   };
 
-  // UI components (igual que antes pero con info de debug)
   switch (status) {
     case 'processing':
       return (
@@ -159,7 +148,7 @@ const OAuth2Callback = () => {
             </div>
             <h3 className="text-primary mb-3">Procesando autenticación...</h3>
             <p className="text-muted">
-              Analizando respuesta OAuth2... (revisa la consola)
+              Analizando respuesta OAuth2...
             </p>
             <div className="progress mt-4" style={{ height: '4px' }}>
               <div className="progress-bar progress-bar-striped progress-bar-animated" 
@@ -227,12 +216,11 @@ const OAuth2Callback = () => {
             </div>
             <h3 className="text-danger mb-3">Error OAuth2</h3>
             <p className="text-muted mb-4">
-              Problema en la autenticación (revisa la consola)
+              Problema en la autenticación
             </p>
             <div className="alert alert-danger border-0 shadow-sm">
               <small>
                 <strong>✗</strong> Error en callback OAuth<br/>
-                <strong>🔍</strong> Revisa la consola del navegador<br/>
                 <strong>↗</strong> Regresando al inicio...
               </small>
             </div>
