@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useTemplateState } from '../hooks/useTemplateState';
 
 const Navigation = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [templateExists, setTemplateExists] = useState(false);
 
   const { isAuthenticated, loading, user, logout } = useAuth();
 
-  useEffect(() => {
-    const template = localStorage.getItem('mptt_template');
-    setTemplateExists(template && JSON.parse(template).length > 1);
-  }, [location]);
+  const { templateExists } = useTemplateState();
 
   const isActive = (path) => location.pathname === path;
 
