@@ -56,9 +56,11 @@ const AppRoutes = () => {
           key={route.path}
           path={route.path}
           element={
-            <ProtectedRoute>
-              {route.element}
-            </ProtectedRoute>
+            // <ProtectedRoute>
+              // {
+                route.element
+              // }
+            // </ProtectedRoute>
           }
         />
       ))}
@@ -66,9 +68,9 @@ const AppRoutes = () => {
       <Route 
         path="*" 
         element={
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <Navigate to="/" replace />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         } 
       />
     </Routes>
