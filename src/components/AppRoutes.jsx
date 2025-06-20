@@ -56,22 +56,22 @@ const AppRoutes = () => {
           key={route.path}
           path={route.path}
           element={
-            // <ProtectedRoute>
-              // {
+            <ProtectedRoute>
+              {
                 route.element
-              // }
-            // </ProtectedRoute>
+              }
+            </ProtectedRoute>
           }
         />
       ))}
 
-      <Route 
-        path="*" 
+      <Route
+        path="*"
         element={
-          // <ProtectedRoute>
-            <Navigate to="/" replace />
-          // </ProtectedRoute>
-        } 
+          <ProtectedRoute>
+          <Navigate to="/" replace />
+          </ProtectedRoute>
+        }
       />
     </Routes>
   );
