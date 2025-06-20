@@ -25,7 +25,7 @@ const OAuth2Callback = () => {
         const success = await validateAndStoreToken(result.getToken());
         
         if (success) {
-          setTimeout(() => navigate(result.getRedirect()), 6000);
+          setTimeout(() => navigate(result.getRedirect()), 1000);
         } else {
           throw new Error('Token validation failed');
         }
@@ -36,7 +36,7 @@ const OAuth2Callback = () => {
     } catch (error) {
       console.error('💥 Error completo:', error);
       setStatus('error');
-      setTimeout(() => navigate('/'), 5000);
+      setTimeout(() => navigate('/'), 1000);
     }
   };
 
