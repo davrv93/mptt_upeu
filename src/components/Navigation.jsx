@@ -168,7 +168,7 @@ const Navigation = () => {
           </ul>
 
           {/* User Profile Menu */}
-          <ul className="navbar-nav ms-3 mb-2 mb-lg-0 profile-menu">
+          {/* <ul className="navbar-nav ms-3 mb-2 mb-lg-0 profile-menu">
             <li className="nav-item dropdown">
               <button
                 className="btn nav-link border-0 bg-transparent"
@@ -193,7 +193,6 @@ const Navigation = () => {
                     </div>
                   </div>
 
-                  {/* User Info */}
                   <div className="d-none d-lg-block text-start">
                     <div className="fw-semibold" style={{ fontSize: '0.9rem', lineHeight: '1.2' }}>
                       {user?.user_name || user?.username || 'Usuario'}
@@ -247,7 +246,6 @@ const Navigation = () => {
                   </div>
                 </li>
 
-                {/* Menu items */}
                 <li>
                   <Link className="dropdown-item py-2" to="/perfil">
                     <i className="fas fa-user fa-fw me-2 text-primary"></i>
@@ -275,7 +273,7 @@ const Navigation = () => {
                 </li>
               </ul>
             </li>
-          </ul>
+          </ul> */}
         </div>
       </div>
     </nav>
