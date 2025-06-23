@@ -14,14 +14,6 @@ const FormField = ({
   const handleChange = useCallback((e) => {
     const newValue = e.target.value;
     
-    console.log('📝 Input cambió:', {
-      nodeId,
-      fieldKey,
-      oldValue: value,
-      newValue,
-      event: e.type
-    });
-    
     if (typeof onChange === 'function') {
       console.log('✅ Llamando a onChange...');
       onChange(nodeId, fieldKey, newValue);
