@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/mptt_upeu/static/css/main.68f5e7ab.css",
-    "main.js": "/mptt_upeu/static/js/main.b7cc8b48.js",
+    "main.js": "/mptt_upeu/static/js/main.3b1fea51.js",
     "static/js/977.8908c32a.chunk.js": "/mptt_upeu/static/js/977.8908c32a.chunk.js",
     "static/js/455.c623afca.chunk.js": "/mptt_upeu/static/js/455.c623afca.chunk.js",
     "index.html": "/mptt_upeu/index.html",
     "main.68f5e7ab.css.map": "/mptt_upeu/static/css/main.68f5e7ab.css.map",
-    "main.b7cc8b48.js.map": "/mptt_upeu/static/js/main.b7cc8b48.js.map",
+    "main.3b1fea51.js.map": "/mptt_upeu/static/js/main.3b1fea51.js.map",
     "977.8908c32a.chunk.js.map": "/mptt_upeu/static/js/977.8908c32a.chunk.js.map",
     "455.c623afca.chunk.js.map": "/mptt_upeu/static/js/455.c623afca.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.68f5e7ab.css",
-    "static/js/main.b7cc8b48.js"
+    "static/js/main.3b1fea51.js"
   ]
 }
