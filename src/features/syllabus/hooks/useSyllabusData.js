@@ -11,7 +11,6 @@ export const useSyllabusData = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const loadData = useCallback(async () => {
-    setIsLoading(true);
     try {
       const savedTemplate = localStorage.getItem(LOCAL_STORAGE_KEY);
 
@@ -20,7 +19,6 @@ export const useSyllabusData = () => {
 
         if (Array.isArray(parsedNodes) && parsedNodes.length > 0) {
           setNodes(parsedNodes);
-          console.log('✅ Plantilla cargada:', parsedNodes.length, 'nodos');
         } else {
           throw new Error('Plantilla no válida o vacía');
         }
@@ -32,7 +30,6 @@ export const useSyllabusData = () => {
       if (savedData) {
         const parsedData = JSON.parse(savedData);
         setSyllabusData(parsedData);
-        console.log('✅ Datos del sílabo cargados');
       }
 
       return { success: true };
@@ -57,14 +54,26 @@ export const useSyllabusData = () => {
   }, [syllabusData]);
 
   const handleFieldChange = useCallback((nodeId, fieldKey, value) => {
-    setSyllabusData(prev => ({
-      ...prev,
-      [nodeId]: {
-        ...prev[nodeId],
-        [fieldKey]: value
+    setSyllabusData(prev => {
+      const updatedData = {
+        ...prev,
+        [nodeId]: {
+          ...prev[nodeId],
+          [fieldKey]: value
+        }
+      };
+      
+      try {
+        localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('❌ Error en guardado inmediato:', error);
+        setHasUnsavedChanges(true);
       }
-    }));
-    setHasUnsavedChanges(true);
+      
+      return updatedData;
+    });
   }, []);
 
   const resetData = useCallback(() => {
@@ -74,11 +83,14 @@ export const useSyllabusData = () => {
   }, []);
 
   useEffect(() => {
-    if (Object.keys(syllabusData).length > 0) {
-      const timeoutId = setTimeout(saveData, 1000);
+    if (hasUnsavedChanges) {
+      const timeoutId = setTimeout(() => {
+        console.log('💾 Auto-guardado de respaldo');
+        saveData();
+      }, 5000);
       return () => clearTimeout(timeoutId);
     }
-  }, [syllabusData, saveData]);
+  }, [hasUnsavedChanges, saveData]);
 
   return {
     nodes,
