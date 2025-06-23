@@ -1,0 +1,57 @@
+[
+    {
+      "id": 1,
+      "name": "Root",
+      "type": "",
+      "parent": null,
+      "attributes": {}
+    },
+    {
+      "id": 2,
+      "name": "Información General",
+      "type": "Información General",
+      "parent": 1,
+      "attributes": {
+        "Facultad/EPG": "",
+        "Programa de Estudio": "",
+        "Nombre de asignatura": "",
+        "Tipo de estudio": "",
+        "Ciclo de estudio": "",
+        "Año y semestre académico": "",
+        "Número de créditos": "",
+        "Duración": "",
+        "Nota mínima aprobatoria": ""
+      }
+    },
+    {
+      "id": 3,
+      "name": "Docentes",
+      "type": "Docentes",
+      "parent": 1,
+      "attributes": {
+        "Docente titular": "",
+        "Docente adjunto": "",
+        "Docente de práctica": ""
+      }
+    },
+    {
+      "id": 4,
+      "name": "Sumilla",
+      "type": "Sumilla",
+      "parent": 1,
+      "attributes": {
+        "Resumen de la asignatura": ""
+      }
+    },
+    {
+      "id": 5,
+      "name": "Recursos",
+      "type": "Recursos",
+      "parent": 1,
+      "attributes": {
+        "Guía de laboratorio": "",
+        "Guía teórica": "",
+        "Otros materiales": ""
+      }
+    }
+]
