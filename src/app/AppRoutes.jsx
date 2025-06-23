@@ -13,6 +13,7 @@ const protectedRoutes = [
     title: 'Dashboard'
   },
   {
+    // path: '/plantilla/:id_plantilla_curso_plan',
     path: '/plantilla',
     element: <TemplateBuilder />,
     title: 'Crear Plantilla'
