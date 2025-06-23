@@ -168,7 +168,7 @@ const Navigation = () => {
           </ul>
 
           {/* User Profile Menu */}
-          {/* <ul className="navbar-nav ms-3 mb-2 mb-lg-0 profile-menu">
+          <ul className="navbar-nav ms-3 mb-2 mb-lg-0 profile-menu">
             <li className="nav-item dropdown">
               <button
                 className="btn nav-link border-0 bg-transparent"
@@ -273,7 +273,7 @@ const Navigation = () => {
                 </li>
               </ul>
             </li>
-          </ul> */}
+          </ul>
         </div>
       </div>
     </nav>
