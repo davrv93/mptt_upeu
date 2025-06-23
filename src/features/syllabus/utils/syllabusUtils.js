@@ -51,20 +51,12 @@ export const determineFieldType = (fieldKey, defaultValue) => {
 };
 
 export const debugLocalStorage = (nodes, syllabusData) => {
-  console.log('=== DEBUG SYLLABUS EDITOR ===');
-  console.log('Nodos cargados:', nodes.length);
-  
   nodes.forEach(node => {
     console.log(`  - ID: ${node.id}, Nombre: "${node.name}", Padre: ${node.parent}, Campos: ${Object.keys(node.attributes || {}).length}`);
   });
 
   const templateExists = localStorage.getItem('mptt_template');
   const dataExists = localStorage.getItem('syllabus_editor_data');
-
-  console.log('Template en localStorage:', templateExists ? 'SÍ' : 'NO');
-  console.log('Datos en localStorage:', dataExists ? 'SÍ' : 'NO');
-  console.log('Nodos con datos:', Object.keys(syllabusData).length);
-  console.log('==============================');
 
   return `📊 ${nodes.length} nodos | ${Object.keys(syllabusData).length} con datos | Template: ${templateExists ? '✅' : '❌'}`;
 };
