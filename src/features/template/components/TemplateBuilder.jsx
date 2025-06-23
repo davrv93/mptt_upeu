@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom';
 import nodeTypes from '../../../shared/types/node_types_schema.json';
 import { useMPTTNodes } from '../hooks/useMPTTNodes';
 import { useAttributesDragDrop } from '../hooks/useAttributesDragDrop';
+import TemplateHeader from './TemplateHeader';
+import TemplateControls from './TemplateControls';
+import SelectedNodeInfo from './SelectedNodeInfo';
+import StatsPanel from './StatsPanel';
+import { useSearchParams } from 'react-router-dom';
+
 
 const ModalPortal = ({ children, isOpen }) => {
   if (!isOpen) return null;
@@ -84,6 +90,14 @@ const TemplateBuilder = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+
+  // const [searchParams] = useSearchParams();
+  // const idPlantillaCursoPlan = searchParams.get('id_plantilla_curso_plan');
+
+  // if (!idPlantillaCursoPlan) {
+  //   return <div>No se encontró la plantilla</div>; // o redirigir o mostrar un error
+  // }
+
 
   const {
     draggedAttribute,
@@ -440,220 +454,28 @@ const TemplateBuilder = () => {
     );
   };
 
-  const renderSelectedNodeInfo = () => {
-    if (!selected) {
-      // Si no hay selección pero existe Root, sugerir seleccionarlo
-      const rootNode = nodes.find(n => n.id === 1);
-      if (rootNode && nodes.length === 1) {
-        return (
-          <div className="alert border-0 mb-4 d-flex flex-column justify-content-center" style={{ backgroundColor: '#FFF3CD', borderRadius: '16px', borderLeft: '4px solid #FFC107' }}>
-            <div className="d-flex align-items-center justify-content-between">
-              <div className="d-flex align-items-center">
-                <span className="me-3" style={{ fontSize: '2rem' }}>🏠</span>
-                <div>
-                  <strong className="text-warning">Selecciona el nodo Root para empezar</strong>
-                  <br />
-                  <small className="text-muted">Haz clic en el nodo Root para seleccionarlo como padre de las nuevas secciones.</small>
-                </div>
-              </div>
-            </div>
-            <button
-              className="btn btn-warning btn-sm"
-              onClick={() => {
-                setSelected(1);
-                showToast('🎯 Root seleccionado como padre', 'success');
-              }}
-            >
-              Seleccionar Nodo ROOT
-            </button>
-          </div>
-        );
-      }
-
-      return (
-        <div className="alert border-0 mb-4" style={{ backgroundColor: '#EAF8FF', borderRadius: '16px' }}>
-          <div className="d-flex align-items-center">
-            <span className="me-3" style={{ fontSize: '2rem' }}>🎯</span>
-            <div>
-              <strong className="text-primary">Selecciona un nodo padre</strong>
-              <br />
-              <small className="text-muted">Haz clic en cualquier nodo del árbol para seleccionarlo como padre del nuevo nodo que crearás.</small>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const selectedNode = nodes.find(n => n.id === selected);
-    if (!selectedNode) return null;
-
-    const nodeColor = getNodeColor(selectedNode.type);
-
-    return (
-      <div
-        className="alert border-0 mb-4"
-        style={{
-          backgroundColor: `${nodeColor}10`,
-          borderLeft: `4px solid ${nodeColor}`,
-          borderRadius: '16px'
-        }}
-      >
-        <div className="d-flex align-items-center">
-          <span className="me-3" style={{ fontSize: '2rem' }}>
-            {getNodeIcon(selectedNode.type)}
-          </span>
-          <div>
-            <strong style={{ color: nodeColor }}>
-              Padre seleccionado: {selectedNode.name}
-            </strong>
-            <br />
-            <small className="text-muted">
-              Los nuevos nodos se crearán como hijos de "{selectedNode.name}"
-              {selectedNode.id === 1 && ' (Nodo principal)'}
-            </small>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="container-fluid mt-4" style={{ backgroundColor: '#F8F9FA' }}>
       {/* Header */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card shadow-sm border-0" style={{ borderRadius: '20px' }}>
-            <div
-              className="card-header border-0 py-4"
-              style={{
-                background: 'linear-gradient(135deg, #003264 0%, #1A8D5A 100%)',
-                color: 'white',
-                borderRadius: '20px 20px 0 0'
-              }}
-            >
-              <div className="row align-items-center">
-                <div className="col-md-6">
-                  <h2 className="mb-0 d-flex align-items-center">
-                    <span className="me-3">🏗️</span>
-                    Constructor de Plantillas
-                  </h2>
-                  <small className="opacity-75">
-                    Diseña la estructura de tu sílabo de forma profesional
-                  </small>
-                  {lastSaved && (
-                    <div className="mt-2">
-                      <small className="opacity-75">
-                        <span className="me-1">💾</span>
-                        Guardado: {lastSaved.toLocaleTimeString()}
-                      </small>
-                    </div>
-                  )}
-                </div>
-                <div className="col-md-6 text-md-end">
-                  <div className="d-flex align-items-center justify-content-md-end gap-3">
-                    <div className="text-center">
-                      <div className="h4 mb-0">{stats.totalNodes}</div>
-                      <small>Nodos</small>
-                    </div>
-                    <div className="text-center">
-                      <div className="h4 mb-0">{stats.totalSections}</div>
-                      <small>Secciones</small>
-                    </div>
-                    <div className="text-center">
-                      <div className={`h4 mb-0 ${validationResults.errors.length > 0 ? 'text-danger' : 'text-success'}`}>
-                        {validationResults.errors.length > 0 ? '❌' : '✅'}
-                      </div>
-                      <small>Estado</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TemplateHeader 
+        stats={stats}
+        lastSaved={lastSaved}
+        validationResults={validationResults}
+      />
 
       <div className="row">
         {/* Columna del árbol */}
         <div className="col-lg-8">
           {/* Controles y búsqueda */}
-          <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
-            <div className="card-body p-4">
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <div className="input-group">
-                    <span className="input-group-text bg-transparent border-end-0">
-                      <span>🔍</span>
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control border-start-0"
-                      placeholder="Buscar nodos..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ borderRadius: '0 12px 12px 0' }}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => setShowTemplateModal(true)}
-                      style={{ borderRadius: '12px' }}
-                    >
-                      <span className="me-1">📋</span>
-                      Plantillas
-                    </button>
-                    <button
-                      className="btn btn-outline-success"
-                      onClick={exportTemplate}
-                      style={{ borderRadius: '12px' }}
-                    >
-                      <span className="me-1">📥</span>
-                      Exportar
-                    </button>
-                    <label className="btn btn-outline-info mb-0" style={{ borderRadius: '12px' }}>
-                      <span className="me-1">📤</span>
-                      Importar
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={handleImportTemplate}
-                        className="d-none"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Validación y estado */}
-              {(validationResults.errors.length > 0 || validationResults.warnings.length > 0) && (
-                <div className="mt-3">
-                  {validationResults.errors.length > 0 && (
-                    <div className="alert alert-danger border-0 mb-2" style={{ borderRadius: '12px' }}>
-                      <strong>❌ Errores encontrados:</strong>
-                      <ul className="mb-0 mt-2">
-                        {validationResults.errors.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {validationResults.warnings.length > 0 && (
-                    <div className="alert alert-warning border-0 mb-0" style={{ borderRadius: '12px' }}>
-                      <strong>⚠️ Advertencias:</strong>
-                      <ul className="mb-0 mt-2">
-                        {validationResults.warnings.map((warning, index) => (
-                          <li key={index}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <TemplateControls 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            setShowTemplateModal={setShowTemplateModal}
+            exportTemplate={exportTemplate}
+            handleImportTemplate={handleImportTemplate}
+            validationResults={validationResults}
+          />
 
           {/* Árbol de nodos */}
           <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
@@ -686,7 +508,12 @@ const TemplateBuilder = () => {
         <div className="col-lg-4">
           <div className="sticky-top" style={{ top: '1rem' }}>
             {/* Información del nodo seleccionado */}
-            {renderSelectedNodeInfo()}
+            <SelectedNodeInfo 
+              selected={selected}
+              nodes={nodes}
+              setSelected={setSelected}
+              showToast={showToast}
+            />
 
             {/* Formulario para agregar nodos */}
             <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
@@ -969,55 +796,13 @@ const TemplateBuilder = () => {
             </div>
 
             {/* Estadísticas y herramientas */}
-            <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
-              <div className="card-body p-4">
-                <h6 className="card-title mb-3 fw-bold">📊 Estadísticas</h6>
-                <div className="row text-center g-3">
-                  <div className="col-4">
-                    <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-primary fw-bold fs-5">{stats.totalNodes}</div>
-                      <small className="text-muted">Nodos</small>
-                    </div>
-                  </div>
-                  <div className="col-4">
-                    <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-success fw-bold fs-5">{stats.maxDepth}</div>
-                      <small className="text-muted">Niveles</small>
-                    </div>
-                  </div>
-                  <div className="col-4">
-                    <div className="border rounded p-3" style={{ borderRadius: '12px' }}>
-                      <div className="text-warning fw-bold fs-5">{stats.totalSections}</div>
-                      <small className="text-muted">Secciones</small>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 d-flex gap-2">
-                  <button
-                    className="btn btn-outline-secondary btn-sm flex-fill"
-                    onClick={restoreBackup}
-                    style={{ borderRadius: '8px' }}
-                  >
-                    🔄 Backup
-                  </button>
-                  <button
-                    className="btn btn-outline-info btn-sm flex-fill"
-                    onClick={() => setShowPreview(!showPreview)}
-                    style={{ borderRadius: '8px' }}
-                  >
-                    👁️ Preview
-                  </button>
-                  <button
-                    className="btn btn-outline-info btn-sm flex-fill"
-                    onClick={checkLocalStorage}
-                    style={{ borderRadius: '8px' }}
-                  >
-                    🔍 Check Storage
-                  </button>
-                </div>
-              </div>
-            </div>
+            <StatsPanel 
+              stats={stats}
+              restoreBackup={restoreBackup}
+              showPreview={showPreview}
+              setShowPreview={setShowPreview}
+              checkLocalStorage={checkLocalStorage}
+            />
           </div>
         </div>
       </div>
