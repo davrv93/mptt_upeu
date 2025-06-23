@@ -15,6 +15,7 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
 
     const percentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
 
+
     return { totalFields, completedFields, percentage };
   }, [nodes, syllabusData]);
 
