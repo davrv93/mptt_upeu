@@ -39,12 +39,6 @@ const UserProfile = () => {
   }
 
   // 🎯 MOSTRAR TODOS LOS DATOS DEL USUARIO EN CONSOLA
-  console.log('👤 ==========================================');
-  console.log('👤 DATOS DEL USUARIO EN COMPONENTE:');
-  console.log('👤 ==========================================');
-  console.log(user);
-  console.log('👤 ==========================================');
-
   return (
     <div className="container mt-4">
       <div className="row">
@@ -136,7 +130,6 @@ const UserProfile = () => {
                 <button 
                   className="btn btn-primary"
                   onClick={() => {
-                    console.log('👤 DATOS ACTUALES DEL USUARIO:', user);
                     alert('Datos del usuario mostrados en consola');
                   }}
                 >
