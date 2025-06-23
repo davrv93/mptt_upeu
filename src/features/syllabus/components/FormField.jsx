@@ -15,7 +15,6 @@ const FormField = ({
     const newValue = e.target.value;
     
     if (typeof onChange === 'function') {
-      console.log('✅ Llamando a onChange...');
       onChange(nodeId, fieldKey, newValue);
     } else {
       console.error('❌ onChange no es una función:', typeof onChange);
