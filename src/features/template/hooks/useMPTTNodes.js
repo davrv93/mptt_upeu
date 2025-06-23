@@ -180,8 +180,6 @@ export const useMPTTNodes = () => {
       setValidationResults(validation);
 
       triggerTemplateUpdate();
-
-      console.log('✅ Plantilla guardada automáticamente');
     } catch (error) {
       console.error('❌ Error al guardar plantilla:', error);
       showToast('❌ Error al guardar la plantilla', 'error');
