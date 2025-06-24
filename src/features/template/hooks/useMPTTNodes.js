@@ -88,10 +88,10 @@ const templates = {
     { id: 4, name: 'Sumilla', type: 'Sumilla', parent: 1, attributes: createAttributesFromSchema('Sumilla'), allowMultipleInstances: false },
     { id: 5, name: 'Competencias', type: 'Competencias', parent: 1, attributes: createAttributesFromSchema('Competencias'), allowMultipleInstances: false },
     { id: 6, name: 'Resultados de Aprendizaje', type: 'Resultados de Aprendizaje', parent: 1, attributes: createAttributesFromSchema('Resultados de Aprendizaje'), allowMultipleInstances: false },
-    { id: 7, name: 'Unidades de Aprendizaje', type: 'Unidades de Aprendizaje', parent: 1, attributes: createAttributesFromSchema('Unidades de Aprendizaje'), allowMultipleInstances: true, instanceBaseName: 'Unidad' },
+    { id: 7, name: 'Unidades de Aprendizaje', type: 'Unidades de Aprendizaje', parent: 1, attributes: createAttributesFromSchema('Unidades de Aprendizaje'), allowMultipleInstances: true },
     { id: 8, name: 'Estrategias Metodológicas', type: 'Estrategias Metodológicas', parent: 1, attributes: createAttributesFromSchema('Estrategias Metodológicas'), allowMultipleInstances: false },
     { id: 9, name: 'Recursos', type: 'Recursos', parent: 1, attributes: createAttributesFromSchema('Recursos'), allowMultipleInstances: false },
-    { id: 10, name: 'Evaluación', type: 'Evaluación', parent: 1, attributes: createAttributesFromSchema('Evaluación'), allowMultipleInstances: true, instanceBaseName: 'Evaluación' },
+    { id: 10, name: 'Evaluación', type: 'Evaluación', parent: 1, attributes: createAttributesFromSchema('Evaluación'), allowMultipleInstances: true },
     { id: 11, name: 'Referencias', type: 'Referencias', parent: 1, attributes: createAttributesFromSchema('Referencias'), allowMultipleInstances: false }
   ]
 };
@@ -201,7 +201,7 @@ export const useMPTTNodes = () => {
 
   // Función para agregar un nuevo nodo
   const addNode = useCallback((nodeData) => {
-    const { nodeType, nodeName, attributes, selectedParent, allowMultipleInstances, instanceBaseName } = nodeData;
+    const { nodeType, nodeName, attributes, selectedParent, allowMultipleInstances } = nodeData;
     
     setIsLoading(true);
 
@@ -237,8 +237,7 @@ export const useMPTTNodes = () => {
         type: nodeType,
         parent: selectedParent,
         attributes: attrObj,
-        allowMultipleInstances: allowMultipleInstances || false,
-        instanceBaseName: allowMultipleInstances ? instanceBaseName : undefined
+        allowMultipleInstances: allowMultipleInstances || false
       };
 
       setNodes(prevNodes => [...prevNodes, newNode]);
