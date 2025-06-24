@@ -18,7 +18,6 @@ const SectionCard = ({
   const hasChildren = nodes.some(n => n.parent === node.id);
   const hasFields = node.attributes && Object.keys(node.attributes).length > 0;
   const hasMultipleInstances = node.allowMultipleInstances;
-  const instanceBaseName = node.instanceBaseName || 'Elemento';
 
   return (
     <div className="mb-3">
@@ -71,7 +70,7 @@ const SectionCard = ({
                       onAddInstance(node.id);
                     }}
                     style={{ borderRadius: '6px' }}
-                    title={`Agregar nueva ${instanceBaseName.toLowerCase()}`}
+                    title="Agregar nueva instancia"
                   >
                     <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span>
                   </button>
@@ -113,13 +112,13 @@ const SectionCard = ({
                         return (
                           <div className="text-center py-4">
                             <div className="mb-3" style={{ fontSize: '2.5rem', opacity: 0.3 }}>📝</div>
-                            <h6 className="text-muted mb-3">No hay {instanceBaseName.toLowerCase()}s agregadas</h6>
+                            <h6 className="text-muted mb-3">No hay instancias agregadas</h6>
                             <button
                               className="btn btn-primary btn-sm"
                               onClick={() => onAddInstance(node.id)}
                               style={{ borderRadius: '8px' }}
                             >
-                              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> Agregar primera {instanceBaseName.toLowerCase()}
+                              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> Agregar primera instancia
                             </button>
                           </div>
                         );
@@ -137,7 +136,7 @@ const SectionCard = ({
                         >
                           <div className="d-flex justify-content-between align-items-center mb-3">
                             <h6 className="mb-0 fw-bold" style={{ color: nodeColor }}>
-                              {instanceBaseName} {instanceId}
+                              Elemento {instanceId}
                             </h6>
                             
                             {instanceIds.length > 1 && (
@@ -145,7 +144,7 @@ const SectionCard = ({
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => onRemoveInstance(node.id, instanceId)}
                                 style={{ borderRadius: '6px' }}
-                                title={`Eliminar ${instanceBaseName} ${instanceId}`}
+                                title={`Eliminar Elemento ${instanceId}`}
                               >
                                 <span style={{ fontSize: '12px' }}>🗑️</span>
                               </button>
@@ -164,7 +163,7 @@ const SectionCard = ({
                                   onFieldChange(nodeId, fieldKey, value, instanceId)
                                 }
                                 instanceId={instanceId}
-                                instanceName={`${instanceBaseName} ${instanceId}`}
+                                instanceName={`Elemento ${instanceId}`}
                               />
                             ))}
                           </div>
