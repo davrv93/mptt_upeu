@@ -163,7 +163,6 @@ export const useSyllabusData = () => {
   useEffect(() => {
     if (hasUnsavedChanges) {
       const timeoutId = setTimeout(() => {
-        console.log('💾 Auto-guardado de respaldo');
         saveData();
       }, 5000);
       return () => clearTimeout(timeoutId);
