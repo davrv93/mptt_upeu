@@ -31,7 +31,15 @@ const SectionCard = ({
             borderBottom: isExpanded ? '1px solid #CFD8ED' : 'none',
             cursor: 'pointer'
           }}
-          onClick={() => onToggle(node.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onToggle) {
+              onToggle(node.id);
+            } else {
+              console.error('❌ onToggle is not defined!');
+            }
+          }}
         >
           <div className="d-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center">
@@ -65,7 +73,7 @@ const SectionCard = ({
                     style={{ borderRadius: '6px' }}
                     title={`Agregar nueva ${instanceBaseName.toLowerCase()}`}
                   >
-                    <i className="bi bi-plus"></i>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span>
                   </button>
                 </div>
               )}
@@ -111,7 +119,7 @@ const SectionCard = ({
                               onClick={() => onAddInstance(node.id)}
                               style={{ borderRadius: '8px' }}
                             >
-                              <i className="bi bi-plus"></i> Agregar primera {instanceBaseName.toLowerCase()}
+                              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> Agregar primera {instanceBaseName.toLowerCase()}
                             </button>
                           </div>
                         );
@@ -139,7 +147,7 @@ const SectionCard = ({
                                 style={{ borderRadius: '6px' }}
                                 title={`Eliminar ${instanceBaseName} ${instanceId}`}
                               >
-                                <i className="bi bi-trash"></i>
+                                <span style={{ fontSize: '12px' }}>🗑️</span>
                               </button>
                             )}
                           </div>
