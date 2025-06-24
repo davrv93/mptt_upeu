@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Hooks personalizados
@@ -18,6 +18,7 @@ import { debugLocalStorage } from '../utils/syllabusUtils';
 
 const SyllabusEditor = () => {
   const navigate = useNavigate();
+  const hasInitializedRef = useRef(false);
   
   // Hooks personalizados
   const {
@@ -50,6 +51,7 @@ const SyllabusEditor = () => {
     expandedSections,
     toggleSection,
     expandAllSections,
+    collapseAllSections,
     searchTerm,
     setSearchTerm,
     filteredNodes
@@ -69,12 +71,19 @@ const SyllabusEditor = () => {
         return;
       }
 
-      expandAllSections();
       showToast('✅ Editor cargado correctamente', 'success');
     };
 
     initializeEditor();
-  }, [loadData, navigate, showToast, expandAllSections]);
+  }, [loadData, navigate, showToast]);
+
+  // Separar el expandAllSections en su propio useEffect
+  useEffect(() => {
+    if (nodes.length > 1 && !hasInitializedRef.current) {
+      expandAllSections();
+      hasInitializedRef.current = true;
+    }
+  }, [nodes.length, expandAllSections]); // Solo ejecutar cuando cambie la cantidad de nodos
 
 
   // Funciones auxiliares
@@ -189,16 +198,20 @@ const SyllabusEditor = () => {
       />
 
       <div className="row">
-        <SyllabusSidebar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          progressStats={progressStats}
-          pdfGenerationCount={pdfGenerationCount}
-          previewCount={previewCount}
-          lastSaved={lastSaved}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onDebugStorage={handleDebugStorage}
-        />
+        <div className="col-lg-3">
+          <SyllabusSidebar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            progressStats={progressStats}
+            pdfGenerationCount={pdfGenerationCount}
+            previewCount={previewCount}
+            lastSaved={lastSaved}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onExpandAll={expandAllSections}
+            onCollapseAll={collapseAllSections}
+            onDebugStorage={handleDebugStorage}
+          />
+        </div>
 
         <div className="col-lg-9">
           <SyllabusContent
