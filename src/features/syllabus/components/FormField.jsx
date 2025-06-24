@@ -6,10 +6,15 @@ const FormField = ({
   fieldKey,
   defaultValue,
   value,
-  onChange
+  onChange,
+  instanceId = null,
+  instanceName = null
 }) => {
   const fieldType = useMemo(() => determineFieldType(fieldKey, defaultValue), [fieldKey, defaultValue]);
-  const fieldId = useMemo(() => `field_${nodeId}_${fieldKey}`, [nodeId, fieldKey]);
+  const fieldId = useMemo(() => 
+    instanceId ? `field_${nodeId}_${instanceId}_${fieldKey}` : `field_${nodeId}_${fieldKey}`, 
+    [nodeId, fieldKey, instanceId]
+  );
   
   const handleChange = useCallback((e) => {
     const newValue = e.target.value;
@@ -33,7 +38,7 @@ const FormField = ({
       border: '1px solid #86B7FE',
       transition: 'border-color 0.2s ease'
     },
-    placeholder: defaultValue || `Ingrese ${formatFieldLabel(fieldKey)}`
+    placeholder: defaultValue || `Ingrese ${formatFieldLabel(fieldKey)}${instanceName ? ` para ${instanceName}` : ''}`
   }), [fieldId, fieldKey, value, handleChange, defaultValue]);
 
   const renderInput = () => {
@@ -91,6 +96,9 @@ const FormField = ({
         }}
       >
         {formatFieldLabel(fieldKey)}
+        {instanceName && (
+          <span className="text-muted small"> - {instanceName}</span>
+        )}
         {fieldType === 'textarea' && (
           <span className="text-muted"> (Descripción extensa)</span>
         )}
