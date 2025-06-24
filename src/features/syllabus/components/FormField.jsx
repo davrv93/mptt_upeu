@@ -92,7 +92,7 @@ const FormField = ({
           color: '#8F9BB3', 
           fontSize: '12px', 
           fontWeight: '700',
-          marginBottom: '5px'
+          marginBottom: '2px'
         }}
       >
         {formatFieldLabel(fieldKey)}
