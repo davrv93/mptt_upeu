@@ -242,7 +242,7 @@ const SectionCard = ({
 
                           {/* Contenido de los campos */}
                           <div className="px-4 py-1">
-                            <div className="row g-3">
+                            <div className="row">
                               {Object.entries(node.attributes).map(([fieldKey, defaultValue]) => (
                                 <FormField
                                   key={`${instanceId}-${fieldKey}`}
@@ -264,7 +264,7 @@ const SectionCard = ({
                   </div>
                 ) : (
                   // Renderizar sección única (comportamiento original)
-                  <div className="row g-3 mb-4">
+                  <div className="row mb-4">
                     {Object.entries(node.attributes).map(([fieldKey, defaultValue]) => (
                       <FormField
                         key={fieldKey}
