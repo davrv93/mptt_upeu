@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SyllabusSidebar = ({
   searchTerm,
@@ -12,24 +12,60 @@ const SyllabusSidebar = ({
   onCollapseAll,
   onDebugStorage
 }) => {
+  // Estado para forzar re-render del timestamp
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Actualizar el tiempo cada minuto para que los timestamps relativos se actualicen
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Cada minuto
+
+    return () => clearInterval(interval);
+  }, []);
   
   // Función para formatear la fecha de último guardado
   const formatLastSaved = (date) => {
     if (!date) return 'Nunca';
     
-    // Si es string, convertir a Date
+    // Si es string, convertir a Date (maneja ISO strings)
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     
     if (isNaN(dateObj.getTime())) return 'Fecha inválida';
     
-    const now = new Date();
-    const diffInMinutes = Math.floor((now - dateObj) / (1000 * 60));
+    // Usar currentTime para forzar actualizaciones
+    const now = currentTime;
+    const diffInSeconds = Math.floor((now - dateObj) / 1000);
     
-    if (diffInMinutes < 1) return 'Hace un momento';
+    // Hace un momento (menos de 30 segundos)
+    if (diffInSeconds < 30) return 'Hace un momento';
+    
+    // Hace X segundos (30 segundos a 1 minuto)
+    if (diffInSeconds < 60) return `Hace ${diffInSeconds} seg`;
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    
+    // Hace X minutos (1 minuto a 1 hora)
     if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
-    if (diffInMinutes < 1440) return `Hace ${Math.floor(diffInMinutes / 60)} h`;
     
-    return dateObj.toLocaleDateString();
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    
+    // Hace X horas (1 hora a 1 día)
+    if (diffInHours < 24) return `Hace ${diffInHours} h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    // Hace X días (1 día a 7 días)
+    if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays !== 1 ? 's' : ''}`;
+    
+    // Para fechas más antiguas, mostrar fecha completa
+    return dateObj.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   // Obtener color del progreso
@@ -160,54 +196,6 @@ const SyllabusSidebar = ({
               </div>
               <small className="text-muted">Total Campos</small>
             </div>
-          </div>
-
-          {/* Progreso de secciones */}
-          {progressStats?.totalSections > 0 && (
-            <div className="mt-3 pt-3 border-top">
-              <div className="row text-center">
-                <div className="col-6">
-                  <div className="fw-bold text-success">
-                    {progressStats.completedSections}
-                  </div>
-                  <small className="text-muted">Secciones completas</small>
-                </div>
-                <div className="col-6">
-                  <div className="fw-bold text-secondary">
-                    {progressStats.totalSections}
-                  </div>
-                  <small className="text-muted">Total secciones</small>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Indicador de estado */}
-          <div className="mt-3">
-            {progressStats?.percentage >= 80 && (
-              <div className="alert alert-success border-0 py-2 mb-0" style={{ borderRadius: '8px' }}>
-                <small>
-                  <i className="fas fa-check-circle me-1"></i>
-                  ¡Casi listo para generar PDF!
-                </small>
-              </div>
-            )}
-            {progressStats?.percentage >= 40 && progressStats?.percentage < 80 && (
-              <div className="alert alert-warning border-0 py-2 mb-0" style={{ borderRadius: '8px' }}>
-                <small>
-                  <i className="fas fa-clock me-1"></i>
-                  Buen progreso, continúa...
-                </small>
-              </div>
-            )}
-            {progressStats?.percentage < 40 && progressStats?.percentage > 0 && (
-              <div className="alert alert-info border-0 py-2 mb-0" style={{ borderRadius: '8px' }}>
-                <small>
-                  <i className="fas fa-play me-1"></i>
-                  Comenzando a completar...
-                </small>
-              </div>
-            )}
           </div>
         </div>
       </div>
