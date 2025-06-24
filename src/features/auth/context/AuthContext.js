@@ -152,7 +152,6 @@ export const AuthProvider = ({ children }) => {
           setUser(storedUser);
           setIsAuthenticated(true);
         } else {
-          console.log('Token expired, clearing auth data');
           clearAuth();
         }
       }
