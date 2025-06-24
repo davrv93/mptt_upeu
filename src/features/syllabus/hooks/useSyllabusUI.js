@@ -15,20 +15,26 @@ export const useSyllabusUI = (nodes) => {
   }, []);
 
   const toggleSection = useCallback((nodeId) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [nodeId]: prev[nodeId] === false ? true : false
-    }));
+    setExpandedSections(prev => {
+      const currentState = prev[nodeId] === true; 
+      const newState = !currentState; 
+      return {
+        ...prev,
+        [nodeId]: newState
+      };
+    });
   }, []);
 
   const expandAllSections = useCallback(() => {
-    const expandedState = {};
-    nodes.forEach(node => {
-      if (node.id !== 1) {
-        expandedState[node.id] = true;
-      }
+    setExpandedSections(prev => {
+      const expandedState = {};
+      nodes.forEach(node => {
+        if (node.id !== 1) {
+          expandedState[node.id] = true;
+        }
+      });
+      return expandedState;
     });
-    setExpandedSections(expandedState);
   }, [nodes]);
 
   const collapseAllSections = useCallback(() => {
