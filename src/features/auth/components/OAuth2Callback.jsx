@@ -76,10 +76,8 @@ const OAuth2Callback = () => {
     const params = new URLSearchParams(hash || search);
     
     if (params.size === 0) {
-      console.log('🔍 ❌ NO se encontraron parámetros');
     } else {
       for (let [key, value] of params) {
-        console.log(`🔍 ✓ ${key}: "${value}"`);
       }
     }
     
@@ -95,19 +93,14 @@ const OAuth2Callback = () => {
       
       switch(error) {
         case 'unauthorized_client':
-          console.log('🔍 📋 CAUSA: redirect_uri NO está autorizado en el servidor');
           break;
         case 'access_denied':
-          console.log('🔍 📋 CAUSA: Usuario rechazó el acceso');
           break;
         case 'invalid_request':
-          console.log('🔍 📋 CAUSA: Request malformado');
           break;
         case 'unsupported_response_type':
-          console.log('🔍 📋 CAUSA: response_type no soportado');
           break;
         default:
-          console.log('🔍 📋 CAUSA: Error OAuth2 desconocido');
       }
     } 
     
