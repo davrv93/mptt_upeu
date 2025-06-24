@@ -24,7 +24,7 @@ const SyllabusContent = ({
     if (childNodes.length === 0) return null;
 
     return childNodes.map(node => {
-      const isExpanded = expandedSections[node.id] !== false;
+      const isExpanded = expandedSections[node.id] === true;
       const hasChildren = nodes.some(n => n.parent === node.id);
 
       return (
