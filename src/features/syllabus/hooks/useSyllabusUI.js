@@ -17,7 +17,7 @@ export const useSyllabusUI = (nodes) => {
   const toggleSection = useCallback((nodeId) => {
     setExpandedSections(prev => ({
       ...prev,
-      [nodeId]: !prev[nodeId]
+      [nodeId]: prev[nodeId] === false ? true : false
     }));
   }, []);
 
