@@ -30,9 +30,20 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
       fieldsCount: Object.keys(n.attributes || {}).length
     })));
     
-    const totalFields = validNodes.reduce((total, node) =>
-      total + Object.keys(node.attributes || {}).length, 0
-    );
+    // Calcular total de campos considerando múltiples instancias
+    let totalFields = 0;
+    validNodes.forEach(node => {
+      const nodeFields = Object.keys(node.attributes || {}).length;
+      
+      if (node.allowMultipleInstances) {
+        const nodeData = syllabusData[node.id] || {};
+        const instanceCount = Object.keys(nodeData.instances || {}).length;
+        // Si no hay instancias, contar como si fuera una instancia potencial
+        totalFields += nodeFields * Math.max(1, instanceCount);
+      } else {
+        totalFields += nodeFields;
+      }
+    });
 
     let completedFields = 0;
     validNodes.forEach(node => {
@@ -42,16 +53,25 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
       console.log(`📝 Nodo ${node.id} (${node.name}):`, {
         fields: nodeFields,
         data: nodeData,
-        completed: nodeFields.filter(key => 
-          nodeData[key] && nodeData[key].toString().trim() !== ''
-        )
+        hasMultipleInstances: node.allowMultipleInstances
       });
       
-      const completedInNode = nodeFields.filter(key =>
-        nodeData[key] && nodeData[key].toString().trim() !== ''
-      ).length;
-      
-      completedFields += completedInNode;
+      if (node.allowMultipleInstances && nodeData.instances) {
+        // Contar campos en múltiples instancias
+        const instances = nodeData.instances;
+        Object.values(instances).forEach(instanceData => {
+          const completedInInstance = nodeFields.filter(key =>
+            instanceData[key] && instanceData[key].toString().trim() !== ''
+          ).length;
+          completedFields += completedInInstance;
+        });
+      } else {
+        // Comportamiento original para secciones únicas
+        const completedInNode = nodeFields.filter(key =>
+          nodeData[key] && nodeData[key].toString().trim() !== ''
+        ).length;
+        completedFields += completedInNode;
+      }
     });
 
     const percentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
@@ -63,13 +83,31 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
     validNodes.forEach(node => {
       const nodeFields = Object.keys(node.attributes || {});
       const nodeData = syllabusData[node.id] || {};
-      const completedInNode = nodeFields.filter(key =>
-        nodeData[key] && nodeData[key].toString().trim() !== ''
-      ).length;
+      
+      if (node.allowMultipleInstances && nodeData.instances) {
+        // Para múltiples instancias, considerar completa si al menos una instancia está 80% llena
+        const instances = nodeData.instances;
+        const instancesArray = Object.values(instances);
+        
+        const hasCompleteInstance = instancesArray.some(instanceData => {
+          const completedInInstance = nodeFields.filter(key =>
+            instanceData[key] && instanceData[key].toString().trim() !== ''
+          ).length;
+          return nodeFields.length > 0 && (completedInInstance / nodeFields.length) >= 0.8;
+        });
+        
+        if (hasCompleteInstance) {
+          completedSections++;
+        }
+      } else {
+        // Comportamiento original para secciones únicas
+        const completedInNode = nodeFields.filter(key =>
+          nodeData[key] && nodeData[key].toString().trim() !== ''
+        ).length;
 
-      // Considerar sección completa si tiene al menos 80% de campos llenos
-      if (nodeFields.length > 0 && (completedInNode / nodeFields.length) >= 0.8) {
-        completedSections++;
+        if (nodeFields.length > 0 && (completedInNode / nodeFields.length) >= 0.8) {
+          completedSections++;
+        }
       }
     });
 
@@ -157,19 +195,46 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
       return { completed: 0, total: 0, percentage: 0 };
     }
 
-    const totalFields = Object.keys(node.attributes).length;
+    const fieldsPerInstance = Object.keys(node.attributes).length;
     const nodeData = syllabusData[nodeId] || {};
-    const completedFields = Object.keys(nodeData).filter(key =>
-      nodeData[key] && nodeData[key].toString().trim() !== ''
-    ).length;
+    
+    if (node.allowMultipleInstances && nodeData.instances) {
+      // Para múltiples instancias
+      const instances = nodeData.instances;
+      const instanceCount = Object.keys(instances).length;
+      const totalFields = fieldsPerInstance * Math.max(1, instanceCount);
+      
+      let completedFields = 0;
+      Object.values(instances).forEach(instanceData => {
+        const completed = Object.keys(node.attributes).filter(key =>
+          instanceData[key] && instanceData[key].toString().trim() !== ''
+        ).length;
+        completedFields += completed;
+      });
 
-    const percentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
+      const percentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
 
-    return {
-      completed: completedFields,
-      total: totalFields,
-      percentage
-    };
+      return {
+        completed: completedFields,
+        total: totalFields,
+        percentage,
+        instances: instanceCount
+      };
+    } else {
+      // Para secciones únicas (comportamiento original)
+      const totalFields = fieldsPerInstance;
+      const completedFields = Object.keys(nodeData).filter(key =>
+        nodeData[key] && nodeData[key].toString().trim() !== ''
+      ).length;
+
+      const percentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
+
+      return {
+        completed: completedFields,
+        total: totalFields,
+        percentage
+      };
+    }
   }, [nodes, syllabusData]);
 
   // Función para verificar si un campo es requerido
