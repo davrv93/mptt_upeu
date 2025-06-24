@@ -90,6 +90,8 @@ const TemplateBuilder = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [allowMultipleInstances, setAllowMultipleInstances] = useState(false);
+  const [instanceBaseName, setInstanceBaseName] = useState('');
 
   // const [searchParams] = useSearchParams();
   // const idPlantillaCursoPlan = searchParams.get('id_plantilla_curso_plan');
@@ -124,10 +126,23 @@ const TemplateBuilder = () => {
   useEffect(() => {
     if (nodeType && nodeTypes[nodeType]) {
       setAttributes(nodeTypes[nodeType].attributes.map(key => ({ key, value: '' })));
+      // Auto-configurar múltiples instancias para ciertos tipos
+      if (['Unidades de Aprendizaje', 'UNIDAD', 'SESION'].includes(nodeType)) {
+        setAllowMultipleInstances(true);
+        setInstanceBaseName(nodeType === 'Unidades de Aprendizaje' ? 'Unidad' : 
+                          nodeType === 'SESION' ? 'Sesión' : 'Elemento');
+      } else {
+        setAllowMultipleInstances(false);
+        setInstanceBaseName('');
+      }
     } else if (nodeType === 'OTRO') {
       setAttributes([{ key: '¿Qué debería hacer este campo?', value: '' }]);
+      setAllowMultipleInstances(false);
+      setInstanceBaseName('');
     } else {
       setAttributes([]);
+      setAllowMultipleInstances(false);
+      setInstanceBaseName('');
     }
   }, [nodeType]);
 
@@ -139,7 +154,9 @@ const TemplateBuilder = () => {
       nodeType,
       nodeName,
       attributes,
-      selectedParent: selected
+      selectedParent: selected,
+      allowMultipleInstances,
+      instanceBaseName: allowMultipleInstances ? instanceBaseName : undefined
     };
 
     const success = addNode(nodeData);
@@ -149,6 +166,8 @@ const TemplateBuilder = () => {
       setNodeName('');
       setNodeType('');
       setAttributes([]);
+      setAllowMultipleInstances(false);
+      setInstanceBaseName('');
     }
   };
 
@@ -178,7 +197,7 @@ const TemplateBuilder = () => {
         {childNodes.map((node) => {
           const nodeColor = getNodeColor(node.type);
           const isSelected = selected === node.id;
-          const hasChildren = nodes.some(n => n.parent === node.id);
+          const hasChildren = nodes.some(n => n.parent === node.id); 
           const isRoot = node.id === 1;
           const isDropTarget = dropTarget === node.id;
           const isDragging = draggedNode === node.id;
@@ -755,6 +774,57 @@ const TemplateBuilder = () => {
                       </button>
                     </div>
                   )}
+
+                  {/* Configuración de múltiples instancias */}
+                  <div className="mb-4">
+                    <div className="card border-1" style={{ borderColor: '#E9ECEF', borderRadius: '12px' }}>
+                      <div className="card-body p-3">
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="allowMultipleInstances"
+                            checked={allowMultipleInstances}
+                            onChange={(e) => setAllowMultipleInstances(e.target.checked)}
+                          />
+                          <label className="form-check-label fw-semibold" htmlFor="allowMultipleInstances">
+                            <span className="me-2">🔢</span>
+                            Permitir múltiples instancias
+                          </label>
+                        </div>
+                        
+                        {allowMultipleInstances && (
+                          <div>
+                            <label className="form-label fw-semibold small">
+                              <span className="me-2">🏷️</span>
+                              Nombre base para instancias
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              placeholder="Ej: Unidad, Sesión, Capítulo..."
+                              value={instanceBaseName}
+                              onChange={(e) => setInstanceBaseName(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            />
+                            <small className="form-text text-muted mt-1">
+                              Se generarán como: {instanceBaseName || 'Elemento'} 1, {instanceBaseName || 'Elemento'} 2, etc.
+                            </small>
+                          </div>
+                        )}
+                        
+                        <div className="mt-2">
+                          <small className="text-muted">
+                            <span className="me-1">💡</span>
+                            {allowMultipleInstances 
+                              ? `Los usuarios podrán agregar varias instancias de "${instanceBaseName || 'esta sección'}" en el sílabo`
+                              : 'Esta sección aparecerá una sola vez en el sílabo'
+                            }
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Botón de agregar */}
                   <div className="d-grid">
