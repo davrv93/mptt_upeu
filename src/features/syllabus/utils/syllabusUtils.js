@@ -52,7 +52,6 @@ export const determineFieldType = (fieldKey, defaultValue) => {
 
 export const debugLocalStorage = (nodes, syllabusData) => {
   nodes.forEach(node => {
-    console.log(`  - ID: ${node.id}, Nombre: "${node.name}", Padre: ${node.parent}, Campos: ${Object.keys(node.attributes || {}).length}`);
   });
 
   const templateExists = localStorage.getItem('mptt_template');
