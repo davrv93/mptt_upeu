@@ -140,8 +140,7 @@ const SyllabusEditor = () => {
 
     try {
       addInstance(nodeId);
-      const instanceBaseName = node.instanceBaseName || 'Elemento';
-      showToast(`✅ Nueva ${instanceBaseName.toLowerCase()} agregada a "${node.name}"`, 'success');
+      showToast(`✅ Nueva instancia agregada a "${node.name}"`, 'success');
     } catch (error) {
       console.error('Error agregando instancia:', error);
       showToast('❌ Error al agregar nueva instancia', 'error');
@@ -166,8 +165,7 @@ const SyllabusEditor = () => {
 
     try {
       removeInstance(nodeId, instanceId);
-      const instanceBaseName = node.instanceBaseName || 'Elemento';
-      showToast(`🗑️ ${instanceBaseName} ${instanceId} eliminada de "${node.name}"`, 'success');
+      showToast(`🗑️ Elemento ${instanceId} eliminado de "${node.name}"`, 'success');
     } catch (error) {
       console.error('Error eliminando instancia:', error);
       showToast('❌ Error al eliminar instancia', 'error');
