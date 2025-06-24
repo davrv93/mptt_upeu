@@ -67,26 +67,32 @@ const validateTemplate = (nodes) => {
   return { errors, warnings };
 };
 
+// Función para crear atributos desde el schema
+const createAttributesFromSchema = (nodeType) => {
+  if (!nodeTypes[nodeType]) return {};
+  return Object.fromEntries(nodeTypes[nodeType].attributes.map(attr => [attr, '']));
+};
+
 // Plantillas predefinidas
 const templates = {
   basico: [
     { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-    { id: 2, name: 'Información General', type: 'Información General', parent: 1, attributes: {} },
-    { id: 3, name: 'Sumilla', type: 'Sumilla', parent: 1, attributes: {} },
-    { id: 4, name: 'Referencias', type: 'Referencias', parent: 1, attributes: {} }
+    { id: 2, name: 'Información General', type: 'Información General', parent: 1, attributes: createAttributesFromSchema('Información General'), allowMultipleInstances: false },
+    { id: 3, name: 'Sumilla', type: 'Sumilla', parent: 1, attributes: createAttributesFromSchema('Sumilla'), allowMultipleInstances: false },
+    { id: 4, name: 'Referencias', type: 'Referencias', parent: 1, attributes: createAttributesFromSchema('Referencias'), allowMultipleInstances: false }
   ],
   completo: [
     { id: 1, name: 'Root', type: '', parent: null, attributes: {} },
-    { id: 2, name: 'Información General', type: 'Información General', parent: 1, attributes: {} },
-    { id: 3, name: 'Docentes', type: 'Docentes', parent: 1, attributes: {} },
-    { id: 4, name: 'Sumilla', type: 'Sumilla', parent: 1, attributes: {} },
-    { id: 5, name: 'Competencias', type: 'Competencias', parent: 1, attributes: {} },
-    { id: 6, name: 'Resultados de Aprendizaje', type: 'Resultados de Aprendizaje', parent: 1, attributes: {} },
-    { id: 7, name: 'Unidades de Aprendizaje', type: 'Unidades de Aprendizaje', parent: 1, attributes: {} },
-    { id: 8, name: 'Estrategias Metodológicas', type: 'Estrategias Metodológicas', parent: 1, attributes: {} },
-    { id: 9, name: 'Recursos', type: 'Recursos', parent: 1, attributes: {} },
-    { id: 10, name: 'Evaluación', type: 'Evaluación', parent: 1, attributes: {} },
-    { id: 11, name: 'Referencias', type: 'Referencias', parent: 1, attributes: {} }
+    { id: 2, name: 'Información General', type: 'Información General', parent: 1, attributes: createAttributesFromSchema('Información General'), allowMultipleInstances: false },
+    { id: 3, name: 'Docentes', type: 'Docentes', parent: 1, attributes: createAttributesFromSchema('Docentes'), allowMultipleInstances: false },
+    { id: 4, name: 'Sumilla', type: 'Sumilla', parent: 1, attributes: createAttributesFromSchema('Sumilla'), allowMultipleInstances: false },
+    { id: 5, name: 'Competencias', type: 'Competencias', parent: 1, attributes: createAttributesFromSchema('Competencias'), allowMultipleInstances: false },
+    { id: 6, name: 'Resultados de Aprendizaje', type: 'Resultados de Aprendizaje', parent: 1, attributes: createAttributesFromSchema('Resultados de Aprendizaje'), allowMultipleInstances: false },
+    { id: 7, name: 'Unidades de Aprendizaje', type: 'Unidades de Aprendizaje', parent: 1, attributes: createAttributesFromSchema('Unidades de Aprendizaje'), allowMultipleInstances: true, instanceBaseName: 'Unidad' },
+    { id: 8, name: 'Estrategias Metodológicas', type: 'Estrategias Metodológicas', parent: 1, attributes: createAttributesFromSchema('Estrategias Metodológicas'), allowMultipleInstances: false },
+    { id: 9, name: 'Recursos', type: 'Recursos', parent: 1, attributes: createAttributesFromSchema('Recursos'), allowMultipleInstances: false },
+    { id: 10, name: 'Evaluación', type: 'Evaluación', parent: 1, attributes: createAttributesFromSchema('Evaluación'), allowMultipleInstances: true, instanceBaseName: 'Evaluación' },
+    { id: 11, name: 'Referencias', type: 'Referencias', parent: 1, attributes: createAttributesFromSchema('Referencias'), allowMultipleInstances: false }
   ]
 };
 
@@ -195,7 +201,7 @@ export const useMPTTNodes = () => {
 
   // Función para agregar un nuevo nodo
   const addNode = useCallback((nodeData) => {
-    const { nodeType, nodeName, attributes, selectedParent } = nodeData;
+    const { nodeType, nodeName, attributes, selectedParent, allowMultipleInstances, instanceBaseName } = nodeData;
     
     setIsLoading(true);
 
@@ -230,7 +236,9 @@ export const useMPTTNodes = () => {
         name: nodeType === 'OTRO' ? nodeName.trim() : nodeType,
         type: nodeType,
         parent: selectedParent,
-        attributes: attrObj
+        attributes: attrObj,
+        allowMultipleInstances: allowMultipleInstances || false,
+        instanceBaseName: allowMultipleInstances ? instanceBaseName : undefined
       };
 
       setNodes(prevNodes => [...prevNodes, newNode]);
