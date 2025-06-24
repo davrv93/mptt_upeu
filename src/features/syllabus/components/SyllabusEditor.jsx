@@ -27,7 +27,9 @@ const SyllabusEditor = () => {
     lastSaved,
     hasUnsavedChanges,
     loadData,
-    handleFieldChange
+    handleFieldChange,
+    addInstance,
+    removeInstance
   } = useSyllabusData();
 
   const { progressStats, isValidSyllabus } = useSyllabusValidation(nodes, syllabusData);
@@ -114,6 +116,55 @@ const SyllabusEditor = () => {
     }
   };
 
+  // Handlers para instancias múltiples
+  const handleAddInstance = (nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) {
+      showToast('❌ Error: Sección no encontrada', 'error');
+      return;
+    }
+
+    if (!node.allowMultipleInstances) {
+      showToast('❌ Esta sección no permite múltiples instancias', 'error');
+      return;
+    }
+
+    try {
+      addInstance(nodeId);
+      const instanceBaseName = node.instanceBaseName || 'Elemento';
+      showToast(`✅ Nueva ${instanceBaseName.toLowerCase()} agregada a "${node.name}"`, 'success');
+    } catch (error) {
+      console.error('Error agregando instancia:', error);
+      showToast('❌ Error al agregar nueva instancia', 'error');
+    }
+  };
+
+  const handleRemoveInstance = (nodeId, instanceId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) {
+      showToast('❌ Error: Sección no encontrada', 'error');
+      return;
+    }
+
+    const nodeData = syllabusData[nodeId] || {};
+    const instances = nodeData.instances || {};
+    const instanceCount = Object.keys(instances).length;
+
+    if (instanceCount <= 1) {
+      showToast('❌ No se puede eliminar la única instancia', 'error');
+      return;
+    }
+
+    try {
+      removeInstance(nodeId, instanceId);
+      const instanceBaseName = node.instanceBaseName || 'Elemento';
+      showToast(`🗑️ ${instanceBaseName} ${instanceId} eliminada de "${node.name}"`, 'success');
+    } catch (error) {
+      console.error('Error eliminando instancia:', error);
+      showToast('❌ Error al eliminar instancia', 'error');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -158,6 +209,8 @@ const SyllabusEditor = () => {
             searchTerm={searchTerm}
             onToggleSection={toggleSection}
             onFieldChange={handleFieldChange}
+            onAddInstance={handleAddInstance}
+            onRemoveInstance={handleRemoveInstance}
             onDebugStorage={handleDebugStorage}
           />
         </div>
