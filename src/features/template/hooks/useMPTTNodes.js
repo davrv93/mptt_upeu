@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import nodeTypes from '../../../shared/types/node_types_schema.json';
 import { useTemplateState } from './useTemplateState';
 import { useDragAndDrop } from '../../../shared/hooks/useDragAndDrop';
@@ -103,8 +103,13 @@ export const useMPTTNodes = () => {
   const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
   const [lastSaved, setLastSaved] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const saveTimeoutRef = useRef(null);
+  const triggerUpdateRef = useRef();
 
   const { triggerTemplateUpdate } = useTemplateState();
+  
+  // Mantener referencia actualizada
+  triggerUpdateRef.current = triggerTemplateUpdate;
 
   // Función para mostrar toast notifications
   const showToast = useCallback((message, type = 'success') => {
@@ -174,7 +179,7 @@ export const useMPTTNodes = () => {
     showToast
   });
 
-  // Función para guardar la plantilla
+  // Función para guardar la plantilla (sin dependencias que cambien)
   const saveTemplate = useCallback((newNodes) => {
     try {
       createBackup(newNodes);
@@ -185,19 +190,37 @@ export const useMPTTNodes = () => {
       const validation = validateTemplate(newNodes);
       setValidationResults(validation);
 
-      triggerTemplateUpdate();
+      // Trigger update usando referencia
+      if (triggerUpdateRef.current) {
+        triggerUpdateRef.current();
+      }
     } catch (error) {
       console.error('❌ Error al guardar plantilla:', error);
-      showToast('❌ Error al guardar la plantilla', 'error');
+      // Evitar dependencia de showToast que puede cambiar
     }
-  }, [triggerTemplateUpdate, showToast]);
+  }, []); // Sin dependencias para evitar bucle
 
-  // Auto-guardado cuando cambian los nodos
+  // Auto-guardado cuando cambian los nodos (con debounce)
   useEffect(() => {
     if (nodes.length > 0) {
-      saveTemplate(nodes);
+      // Limpiar timeout anterior
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      // Establecer nuevo timeout para guardar
+      saveTimeoutRef.current = setTimeout(() => {
+        saveTemplate(nodes);
+      }, 500); // Esperar 500ms antes de guardar
     }
-  }, [nodes, saveTemplate]);
+
+    // Cleanup
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [nodes]); // Solo depende de nodes, no de saveTemplate
 
   // Función para agregar un nuevo nodo
   const addNode = useCallback((nodeData) => {
