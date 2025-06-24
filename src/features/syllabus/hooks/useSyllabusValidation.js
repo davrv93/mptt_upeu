@@ -2,11 +2,6 @@ import { useMemo, useCallback } from 'react';
 
 export const useSyllabusValidation = (nodes, syllabusData) => {
   const progressStats = useMemo(() => {
-    console.log('🔍 Calculando progreso con:', { 
-      nodes: nodes?.length, 
-      syllabusData: Object.keys(syllabusData) 
-    });
-
     if (!nodes || nodes.length === 0) {
       return { 
         totalFields: 0, 
@@ -24,11 +19,6 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
       Object.keys(node.attributes).length > 0
     );
     
-    console.log('📊 Nodos válidos encontrados:', validNodes.map(n => ({
-      id: n.id,
-      name: n.name,
-      fieldsCount: Object.keys(n.attributes || {}).length
-    })));
     
     // Calcular total de campos considerando múltiples instancias
     let totalFields = 0;
@@ -49,12 +39,6 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
     validNodes.forEach(node => {
       const nodeData = syllabusData[node.id] || {};
       const nodeFields = Object.keys(node.attributes || {});
-      
-      console.log(`📝 Nodo ${node.id} (${node.name}):`, {
-        fields: nodeFields,
-        data: nodeData,
-        hasMultipleInstances: node.allowMultipleInstances
-      });
       
       if (node.allowMultipleInstances && nodeData.instances) {
         // Contar campos en múltiples instancias
@@ -119,7 +103,6 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
       completedSections
     };
 
-    console.log('✅ Resultado del progreso:', result);
     return result;
   }, [nodes, syllabusData]);
 
@@ -135,13 +118,6 @@ export const useSyllabusValidation = (nodes, syllabusData) => {
     const hasData = validNodes.some(node => {
       const nodeData = syllabusData[node.id];
       return nodeData && Object.keys(nodeData).length > 0;
-    });
-
-    console.log('🔍 Validación syllabus:', {
-      hasMinimumProgress,
-      hasData,
-      percentage: progressStats.percentage,
-      validNodes: validNodes.length
     });
 
     return hasMinimumProgress && hasData;
