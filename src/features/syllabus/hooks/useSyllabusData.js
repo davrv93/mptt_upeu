@@ -53,13 +53,64 @@ export const useSyllabusData = () => {
     }
   }, [syllabusData]);
 
-  const handleFieldChange = useCallback((nodeId, fieldKey, value) => {
+  const handleFieldChange = useCallback((nodeId, fieldKey, value, instanceId = null) => {
     setSyllabusData(prev => {
+      let updatedData;
+      
+      if (instanceId !== null) {
+        // Manejo de múltiples instancias
+        updatedData = {
+          ...prev,
+          [nodeId]: {
+            ...prev[nodeId],
+            instances: {
+              ...prev[nodeId]?.instances,
+              [instanceId]: {
+                ...prev[nodeId]?.instances?.[instanceId],
+                [fieldKey]: value
+              }
+            }
+          }
+        };
+      } else {
+        // Manejo de sección única (comportamiento original)
+        updatedData = {
+          ...prev,
+          [nodeId]: {
+            ...prev[nodeId],
+            [fieldKey]: value
+          }
+        };
+      }
+      
+      try {
+        localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('❌ Error en guardado inmediato:', error);
+        setHasUnsavedChanges(true);
+      }
+      
+      return updatedData;
+    });
+  }, []);
+
+  const addInstance = useCallback((nodeId) => {
+    setSyllabusData(prev => {
+      const nodeData = prev[nodeId] || {};
+      const instances = nodeData.instances || {};
+      const instanceIds = Object.keys(instances).map(id => parseInt(id));
+      const nextInstanceId = instanceIds.length > 0 ? Math.max(...instanceIds) + 1 : 1;
+      
       const updatedData = {
         ...prev,
         [nodeId]: {
-          ...prev[nodeId],
-          [fieldKey]: value
+          ...nodeData,
+          instances: {
+            ...instances,
+            [nextInstanceId]: {}
+          }
         }
       };
       
@@ -68,7 +119,34 @@ export const useSyllabusData = () => {
         setLastSaved(new Date());
         setHasUnsavedChanges(false);
       } catch (error) {
-        console.error('❌ Error en guardado inmediato:', error);
+        console.error('❌ Error guardando nueva instancia:', error);
+        setHasUnsavedChanges(true);
+      }
+      
+      return updatedData;
+    });
+  }, []);
+
+  const removeInstance = useCallback((nodeId, instanceId) => {
+    setSyllabusData(prev => {
+      const nodeData = prev[nodeId] || {};
+      const instances = { ...nodeData.instances };
+      delete instances[instanceId];
+      
+      const updatedData = {
+        ...prev,
+        [nodeId]: {
+          ...nodeData,
+          instances
+        }
+      };
+      
+      try {
+        localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('❌ Error eliminando instancia:', error);
         setHasUnsavedChanges(true);
       }
       
@@ -101,6 +179,8 @@ export const useSyllabusData = () => {
     loadData,
     saveData,
     handleFieldChange,
+    addInstance,
+    removeInstance,
     resetData
   };
 };
