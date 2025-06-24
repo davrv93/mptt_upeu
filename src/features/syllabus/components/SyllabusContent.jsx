@@ -10,6 +10,8 @@ const SyllabusContent = ({
   searchTerm,
   onToggleSection,
   onFieldChange,
+  onAddInstance,
+  onRemoveInstance,
   onDebugStorage
 }) => {
   const navigate = useNavigate();
@@ -34,12 +36,14 @@ const SyllabusContent = ({
           isExpanded={isExpanded}
           onToggle={onToggleSection}
           onFieldChange={onFieldChange}
+          onAddInstance={onAddInstance}
+          onRemoveInstance={onRemoveInstance}
         >
           {hasChildren && renderSectionTree(node.id, depth + 1)}
         </SectionCard>
       );
     });
-  }, [filteredNodes, nodes, syllabusData, expandedSections, onToggleSection, onFieldChange]);
+  }, [filteredNodes, nodes, syllabusData, expandedSections, onToggleSection, onFieldChange, onAddInstance, onRemoveInstance]);
 
   if (nodes.length <= 1) {
     return (
