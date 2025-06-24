@@ -60,25 +60,30 @@ const SectionCard = ({
             <div className="d-flex align-items-center gap-3">
               {hasFields && hasMultipleInstances && (
                 <div className="d-flex align-items-center gap-2">
-                  <span className="badge bg-light text-dark">
+                  <span className="badge"
+                    style={{ fontSize: '14px', fontWeight: 'bold', backgroundColor: '#FFECC7', color: '#F8A900', border: '1px solid #F8A900' }}>
                     {Object.keys(syllabusData[node.id]?.instances || {}).length} instancia{Object.keys(syllabusData[node.id]?.instances || {}).length !== 1 ? 's' : ''}
                   </span>
                   <button
-                    className="btn btn-sm btn-outline-primary"
+                    className="btn btn-sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       onAddInstance(node.id);
                     }}
-                    style={{ borderRadius: '6px' }}
+                    style={{ borderRadius: '6px', backgroundColor: '#B4F6D9', border: '1px solid #1A8D5A' }}
                     title="Agregar nueva instancia"
                   >
-                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1A8D5A' }}>+ Nuevo</span>
                   </button>
                 </div>
               )}
 
               {hasFields && !hasMultipleInstances && (
-                <span className="badge" style={{ backgroundColor: '#003264', color: 'white' }}>
+                <span className="badge"
+                  style={{
+                    fontSize: '14px', fontWeight: 'bold', backgroundColor: '#C6E6FF', color: '#276CA1',
+                    border: '1px solid #276CA1'
+                  }}>
                   {Object.keys(node.attributes).length} campos
                 </span>
               )}
@@ -89,9 +94,27 @@ const SectionCard = ({
                 </span>
               )}
 
-              <span style={{ fontSize: '1.2rem', color: '#003264' }}>
-                {isExpanded ? '▼' : '▶'}
+              <span
+                style={{
+                  fontSize: '1.3rem',
+                  color: '#5F0B72',
+                  backgroundColor: '#E9DCFF',
+                  border: '1.5px dashed #5F0B72',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'transform 0.2s ease-in-out',
+                  transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  cursor: 'pointer',
+                }}
+              >
+                ▼
               </span>
+
+
             </div>
           </div>
         </div>
@@ -107,7 +130,7 @@ const SectionCard = ({
                     {(() => {
                       const instances = syllabusData[node.id]?.instances || {};
                       const instanceIds = Object.keys(instances);
-                      
+
                       if (instanceIds.length === 0) {
                         return (
                           <div className="text-center py-4">
@@ -125,47 +148,115 @@ const SectionCard = ({
                       }
 
                       return instanceIds.map((instanceId, index) => (
-                        <div 
+                        <div
                           key={instanceId}
-                          className={`instance-container p-3 mb-3 ${index !== instanceIds.length - 1 ? 'border-bottom' : ''}`}
-                          style={{ 
-                            backgroundColor: 'white',
-                            borderRadius: '8px',
-                            border: '1px solid #E9ECEF'
+                          className={`instance-container mb-4 `}
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: '12px',
+                            border: '1px solid #C6E6FF',
+                            boxShadow: '0 2px 6px rgba(39, 108, 161, 0.1)',
+                            transition: 'all 0.2s ease',
+                            position: 'relative',
+                            overflow: 'hidden'
                           }}
                         >
-                          <div className="d-flex justify-content-between align-items-center mb-3">
-                            <h6 className="mb-0 fw-bold" style={{ color: nodeColor }}>
-                              Elemento {instanceId}
-                            </h6>
-                            
+                          {/* Barra lateral de color para identificar la instancia */}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              bottom: 0,
+                              width: '6px',
+                              backgroundColor: '#276CA1'
+                            }}
+                          />
+
+                          {/* Header de la instancia */}
+                          <div
+                            className="d-flex justify-content-between align-items-center px-4 py-2"
+                            style={{
+                              backgroundColor: '#EBF5FF',
+                              borderBottom: '1px solid #C6E6FF'
+                            }}
+                          >
+                            <div className="d-flex align-items-center">
+                              <span
+                                className="me-3"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '8px',
+                                  backgroundColor: '#FFFFFF',
+                                  border: '2px solid #276CA1',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  color: '#276CA1'
+                                }}
+                              >
+                                {instanceId}
+                              </span>
+                              <div>
+                                <h6 className="mb-0 fw-bold" style={{ color: '#003264', fontSize: '16px' }}>
+                                  Elemento {instanceId}
+                                </h6>
+                              </div>
+                            </div>
+
                             {instanceIds.length > 1 && (
                               <button
-                                className="btn btn-sm btn-outline-danger"
+                                className="btn btn-sm"
                                 onClick={() => onRemoveInstance(node.id, instanceId)}
-                                style={{ borderRadius: '6px' }}
+                                style={{
+                                  borderRadius: '8px',
+                                  backgroundColor: '#FFFFFF',
+                                  border: '2px solid #DB0000',
+                                  color: '#DB0000',
+                                  padding: '2px 10px',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#DB0000';
+                                  e.target.style.color = '#FFFFFF';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = '#FFFFFF';
+                                  e.target.style.color = '#DB0000';
+                                }}
                                 title={`Eliminar Elemento ${instanceId}`}
                               >
-                                <span style={{ fontSize: '12px' }}>🗑️</span>
+                                <span style={{ fontSize: '14px' }}>✕</span>
+                                Eliminar
                               </button>
                             )}
                           </div>
 
-                          <div className="row g-3">
-                            {Object.entries(node.attributes).map(([fieldKey, defaultValue]) => (
-                              <FormField
-                                key={`${instanceId}-${fieldKey}`}
-                                nodeId={node.id}
-                                fieldKey={fieldKey}
-                                defaultValue={defaultValue}
-                                value={instances[instanceId]?.[fieldKey] || ''}
-                                onChange={(nodeId, fieldKey, value) => 
-                                  onFieldChange(nodeId, fieldKey, value, instanceId)
-                                }
-                                instanceId={instanceId}
-                                instanceName={`Elemento ${instanceId}`}
-                              />
-                            ))}
+                          {/* Contenido de los campos */}
+                          <div className="px-4 py-1">
+                            <div className="row g-3">
+                              {Object.entries(node.attributes).map(([fieldKey, defaultValue]) => (
+                                <FormField
+                                  key={`${instanceId}-${fieldKey}`}
+                                  nodeId={node.id}
+                                  fieldKey={fieldKey}
+                                  defaultValue={defaultValue}
+                                  value={instances[instanceId]?.[fieldKey] || ''}
+                                  onChange={(nodeId, fieldKey, value) =>
+                                    onFieldChange(nodeId, fieldKey, value, instanceId)
+                                  }
+                                  instanceId={instanceId}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ));
