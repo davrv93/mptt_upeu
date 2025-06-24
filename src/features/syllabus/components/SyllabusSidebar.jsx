@@ -8,6 +8,8 @@ const SyllabusSidebar = ({
   previewCount,
   lastSaved,
   hasUnsavedChanges,
+  onExpandAll,
+  onCollapseAll,
   onDebugStorage
 }) => {
   
@@ -41,7 +43,7 @@ const SyllabusSidebar = ({
   const progressColor = getProgressColor(progressStats?.percentage || 0);
 
   return (
-    <div className="col-lg-3 mb-4">
+    <div className="mb-4">
       {/* Buscador */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '16px' }}>
         <div className="card-body p-3">
@@ -79,6 +81,38 @@ const SyllabusSidebar = ({
               Buscando: "{searchTerm}"
             </small>
           )}
+        </div>
+      </div>
+
+      {/* Controles de Expansión */}
+      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '16px' }}>
+        <div className="card-body p-3">
+          <h6 className="fw-bold mb-3 text-primary">
+            <i className="fas fa-expand-arrows-alt me-2"></i>
+            Controles de Sección
+          </h6>
+          <div className="d-grid gap-2">
+            <button
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => {
+                onExpandAll && onExpandAll();
+              }}
+              style={{ borderRadius: '8px' }}
+            >
+              <i className="fas fa-plus-circle me-2"></i>
+              Expandir Todo
+            </button>
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => {
+                onCollapseAll && onCollapseAll();
+              }}
+              style={{ borderRadius: '8px' }}
+            >
+              <i className="fas fa-minus-circle me-2"></i>
+              Colapsar Todo
+            </button>
+          </div>
         </div>
       </div>
 
@@ -242,8 +276,6 @@ const SyllabusSidebar = ({
               <button
                 className="btn btn-outline-info btn-sm"
                 onClick={() => {
-                  console.log('📊 Progress Stats:', progressStats);
-                  console.log('🔍 Search Term:', searchTerm);
                 }}
                 style={{ borderRadius: '8px', fontSize: '0.8rem' }}
               >
