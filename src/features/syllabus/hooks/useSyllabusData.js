@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 const LOCAL_STORAGE_KEY = 'mptt_template';
 const SYLLABUS_DATA_KEY = 'syllabus_editor_data';
+const TEMPLATE_LAST_MODIFIED_KEY = 'template_last_modified';
 
 export const useSyllabusData = () => {
   const [nodes, setNodes] = useState([]);
@@ -9,6 +10,14 @@ export const useSyllabusData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Función auxiliar para actualizar la fecha de guardado
+  const updateLastSaved = useCallback(() => {
+    const now = new Date();
+    localStorage.setItem(TEMPLATE_LAST_MODIFIED_KEY, now.toISOString());
+    setLastSaved(now);
+    setHasUnsavedChanges(false);
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -32,6 +41,15 @@ export const useSyllabusData = () => {
         setSyllabusData(parsedData);
       }
 
+      // Cargar la fecha de última modificación
+      const lastModified = localStorage.getItem(TEMPLATE_LAST_MODIFIED_KEY);
+      if (lastModified) {
+        const lastModifiedDate = new Date(lastModified);
+        if (!isNaN(lastModifiedDate.getTime())) {
+          setLastSaved(lastModifiedDate);
+        }
+      }
+
       return { success: true };
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -44,14 +62,13 @@ export const useSyllabusData = () => {
   const saveData = useCallback(() => {
     try {
       localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(syllabusData));
-      setLastSaved(new Date());
-      setHasUnsavedChanges(false);
+      updateLastSaved();
       return true;
     } catch (error) {
       console.error('Error guardando datos:', error);
       return false;
     }
-  }, [syllabusData]);
+  }, [syllabusData, updateLastSaved]);
 
   const handleFieldChange = useCallback((nodeId, fieldKey, value, instanceId = null) => {
     setSyllabusData(prev => {
@@ -85,8 +102,7 @@ export const useSyllabusData = () => {
       
       try {
         localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
-        setLastSaved(new Date());
-        setHasUnsavedChanges(false);
+        updateLastSaved();
       } catch (error) {
         console.error('❌ Error en guardado inmediato:', error);
         setHasUnsavedChanges(true);
@@ -94,7 +110,7 @@ export const useSyllabusData = () => {
       
       return updatedData;
     });
-  }, []);
+  }, [updateLastSaved]);
 
   const addInstance = useCallback((nodeId) => {
     setSyllabusData(prev => {
@@ -116,8 +132,7 @@ export const useSyllabusData = () => {
       
       try {
         localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
-        setLastSaved(new Date());
-        setHasUnsavedChanges(false);
+        updateLastSaved();
       } catch (error) {
         console.error('❌ Error guardando nueva instancia:', error);
         setHasUnsavedChanges(true);
@@ -125,7 +140,7 @@ export const useSyllabusData = () => {
       
       return updatedData;
     });
-  }, []);
+  }, [updateLastSaved]);
 
   const removeInstance = useCallback((nodeId, instanceId) => {
     setSyllabusData(prev => {
@@ -143,8 +158,7 @@ export const useSyllabusData = () => {
       
       try {
         localStorage.setItem(SYLLABUS_DATA_KEY, JSON.stringify(updatedData));
-        setLastSaved(new Date());
-        setHasUnsavedChanges(false);
+        updateLastSaved();
       } catch (error) {
         console.error('❌ Error eliminando instancia:', error);
         setHasUnsavedChanges(true);
@@ -152,7 +166,7 @@ export const useSyllabusData = () => {
       
       return updatedData;
     });
-  }, []);
+  }, [updateLastSaved]);
 
   const resetData = useCallback(() => {
     setSyllabusData({});
@@ -168,6 +182,21 @@ export const useSyllabusData = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [hasUnsavedChanges, saveData]);
+
+  // Listener para cambios en localStorage (desde otras pestañas o componentes)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === TEMPLATE_LAST_MODIFIED_KEY && e.newValue) {
+        const newDate = new Date(e.newValue);
+        if (!isNaN(newDate.getTime())) {
+          setLastSaved(newDate);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   return {
     nodes,
