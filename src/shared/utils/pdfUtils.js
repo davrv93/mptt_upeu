@@ -130,6 +130,37 @@ export const PDF_STYLES = `
     font-size: 10px;
   }
 
+  .pdf-instances-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 11px;
+  }
+
+  .pdf-instances-table th,
+  .pdf-instances-table td {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .pdf-instances-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    color: #000;
+  }
+
+  .pdf-instances-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .pdf-instances-table .instance-header {
+    background-color: #e6f3ff;
+    font-weight: bold;
+    text-align: center;
+  }
+
   @media print {
     .pdf-container {
       margin: 0;
@@ -229,28 +260,14 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
   html += `<div class="pdf-section-title">${section.name}</div>`;
 
   if (section.attributes && Object.keys(section.attributes).length > 0) {
-    Object.entries(section.attributes).forEach(([key, defaultValue]) => {
-      const value = syllabusData[section.id]?.[key] || defaultValue || '';
-
-      if (value && value.toString().trim() !== '') {
-        html += `
-          <div class="pdf-field">
-            <span class="pdf-field-label">${formatFieldLabel(key)}:</span>
-            <span class="pdf-field-value">${formatFieldValue(value)}</span>
-          </div>
-        `;
-      }
-    });
-  }
-
-  const subsections = nodes.filter(node => node.parent === section.id);
-  subsections.forEach(subsection => {
-    html += `<div class="pdf-subsection">`;
-    html += `<div class="pdf-subsection-title">${subsection.name}</div>`;
-
-    if (subsection.attributes && Object.keys(subsection.attributes).length > 0) {
-      Object.entries(subsection.attributes).forEach(([key, defaultValue]) => {
-        const value = syllabusData[subsection.id]?.[key] || defaultValue || '';
+    // Verificar si la sección permite múltiples instancias
+    if (section.allowMultipleInstances) {
+      // Generar tabla para instancias múltiples
+      html += generateInstancesTableHTML(section, syllabusData);
+    } else {
+      // Generar campos normales para sección única
+      Object.entries(section.attributes).forEach(([key, defaultValue]) => {
+        const value = syllabusData[section.id]?.[key] || defaultValue || '';
 
         if (value && value.toString().trim() !== '') {
           html += `
@@ -261,6 +278,34 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
           `;
         }
       });
+    }
+  }
+
+  const subsections = nodes.filter(node => node.parent === section.id);
+  subsections.forEach(subsection => {
+    html += `<div class="pdf-subsection">`;
+    html += `<div class="pdf-subsection-title">${subsection.name}</div>`;
+
+    if (subsection.attributes && Object.keys(subsection.attributes).length > 0) {
+      // Verificar si la subsección permite múltiples instancias
+      if (subsection.allowMultipleInstances) {
+        // Generar tabla para instancias múltiples
+        html += generateInstancesTableHTML(subsection, syllabusData);
+      } else {
+        // Generar campos normales para subsección única
+        Object.entries(subsection.attributes).forEach(([key, defaultValue]) => {
+          const value = syllabusData[subsection.id]?.[key] || defaultValue || '';
+
+          if (value && value.toString().trim() !== '') {
+            html += `
+              <div class="pdf-field">
+                <span class="pdf-field-label">${formatFieldLabel(key)}:</span>
+                <span class="pdf-field-value">${formatFieldValue(value)}</span>
+              </div>
+            `;
+          }
+        });
+      }
     }
 
     const subSubsections = nodes.filter(node => node.parent === subsection.id);
@@ -273,6 +318,57 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
 
   html += `</div>`;
   return html;
+};
+
+/**
+ * Genera HTML de tabla para instancias múltiples
+ * @param {Object} section - Sección con múltiples instancias
+ * @param {Object} syllabusData - Datos del sílabo
+ * @returns {string} HTML de la tabla
+ */
+const generateInstancesTableHTML = (section, syllabusData) => {
+  const instances = syllabusData[section.id]?.instances || {};
+  const instanceIds = Object.keys(instances).sort((a, b) => parseInt(a) - parseInt(b));
+  
+  if (instanceIds.length === 0) {
+    return '<p><em>No hay instancias agregadas</em></p>';
+  }
+
+  const fieldKeys = Object.keys(section.attributes || {});
+  
+  if (fieldKeys.length === 0) {
+    return '<p><em>No hay campos configurados</em></p>';
+  }
+
+  let tableHTML = '<table class="pdf-instances-table">';
+  
+  // Crear header de la tabla
+  tableHTML += '<thead><tr>';
+  tableHTML += '<th class="instance-header">Elemento</th>';
+  fieldKeys.forEach(fieldKey => {
+    tableHTML += `<th>${formatFieldLabel(fieldKey)}</th>`;
+  });
+  tableHTML += '</tr></thead>';
+  
+  // Crear filas de datos
+  tableHTML += '<tbody>';
+  instanceIds.forEach(instanceId => {
+    const instanceData = instances[instanceId] || {};
+    tableHTML += '<tr>';
+    tableHTML += `<td class="instance-header">${instanceId}</td>`;
+    
+    fieldKeys.forEach(fieldKey => {
+      const value = instanceData[fieldKey] || section.attributes[fieldKey] || '';
+      tableHTML += `<td>${formatFieldValue(value)}</td>`;
+    });
+    
+    tableHTML += '</tr>';
+  });
+  tableHTML += '</tbody>';
+  
+  tableHTML += '</table>';
+  
+  return tableHTML;
 };
 
 /**
