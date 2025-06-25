@@ -160,7 +160,7 @@ const SyllabusSidebar = ({
             <i className="fas fa-chart-pie me-2"></i>
             Progreso del Sílabo
           </h6>
-
+          <hr />
           <div className="mb-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <small className="text-muted">Completado</small>
@@ -208,6 +208,7 @@ const SyllabusSidebar = ({
             <i className="fas fa-chart-line me-2"></i>
             Estadísticas
           </h6>
+          <hr />
 
           <div className="mb-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
@@ -251,7 +252,7 @@ const SyllabusSidebar = ({
           )}
 
           {/* Botones de acción */}
-          <div className="d-grid gap-2">
+          {/* <div className="d-grid gap-2">
             <button
               className="btn btn-outline-secondary btn-sm"
               onClick={onDebugStorage}
@@ -272,7 +273,7 @@ const SyllabusSidebar = ({
                 Debug Stats
               </button>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
