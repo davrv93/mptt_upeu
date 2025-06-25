@@ -80,13 +80,14 @@ export const PDF_STYLES = `
   .pdf-subsection-title {
     font-size: 12px;
     font-weight: bold;
-    color: #1A8D5A;
+    color: #000;
     margin-bottom: 8px;
     text-decoration: underline;
+    border: 1px solid blue;
   }
 
   .pdf-field {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
     align-items: flex-start;
   }
@@ -94,8 +95,9 @@ export const PDF_STYLES = `
   .pdf-field-label {
     font-weight: bold;
     min-width: 120px;
-    margin-right: 10px;
+    margin-right: 8px;
     color: #333;
+    margin-left: 20px;
   }
 
   .pdf-field-value {
@@ -130,6 +132,10 @@ export const PDF_STYLES = `
     font-size: 10px;
   }
 
+  .table-countainer {
+    margin-left: 20px;
+  }
+
   .pdf-instances-table {
     width: 100%;
     border-collapse: collapse;
@@ -139,27 +145,22 @@ export const PDF_STYLES = `
 
   .pdf-instances-table th,
   .pdf-instances-table td {
-    border: 1px solid #333;
+    border: 1px solid #CFD8ED;
     padding: 8px;
     text-align: left;
     vertical-align: top;
   }
 
   .pdf-instances-table th {
-    background-color: #f0f0f0;
+    background-color: #EAF8FF;
     font-weight: bold;
-    color: #000;
+    color: #276CA1;
   }
 
   .pdf-instances-table tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #F3F6F8;
   }
 
-  .pdf-instances-table .instance-header {
-    background-color: #e6f3ff;
-    font-weight: bold;
-    text-align: center;
-  }
 
   @media print {
     .pdf-container {
@@ -227,8 +228,8 @@ export const generatePDFHTML = (syllabusData, nodes) => {
       </div>
   `;
 
-  rootChildren.forEach(section => {
-    html += generateSectionHTML(section, syllabusData, nodes);
+  rootChildren.forEach((section, index) => {
+    html += generateSectionHTML(section, syllabusData, nodes, index);
   });
 
   html += `
@@ -253,11 +254,12 @@ export const generatePDFHTML = (syllabusData, nodes) => {
  * @param {Object} section - Sección del sílabo
  * @param {Object} syllabusData - Datos del sílabo
  * @param {Array} nodes - Todos los nodos
+ * @param {number} index - Índice de la sección para numeración
  * @returns {string} HTML de la sección
  */
-const generateSectionHTML = (section, syllabusData, nodes) => {
+const generateSectionHTML = (section, syllabusData, nodes, index = 0) => {
   let html = `<div class="pdf-section">`;
-  html += `<div class="pdf-section-title">${section.name}</div>`;
+  html += `<div class="pdf-section-title">${index + 1}. ${section.name}</div>`;
 
   if (section.attributes && Object.keys(section.attributes).length > 0) {
     // Verificar si la sección permite múltiples instancias
@@ -310,7 +312,7 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
 
     const subSubsections = nodes.filter(node => node.parent === subsection.id);
     subSubsections.forEach(subSub => {
-      html += generateSectionHTML(subSub, syllabusData, nodes);
+      html += generateSectionHTML(subSub, syllabusData, nodes, 0);
     });
 
     html += `</div>`;
@@ -329,43 +331,43 @@ const generateSectionHTML = (section, syllabusData, nodes) => {
 const generateInstancesTableHTML = (section, syllabusData) => {
   const instances = syllabusData[section.id]?.instances || {};
   const instanceIds = Object.keys(instances).sort((a, b) => parseInt(a) - parseInt(b));
-  
+
   if (instanceIds.length === 0) {
     return '<p><em>No hay instancias agregadas</em></p>';
   }
 
   const fieldKeys = Object.keys(section.attributes || {});
-  
+
   if (fieldKeys.length === 0) {
     return '<p><em>No hay campos configurados</em></p>';
   }
 
-  let tableHTML = '<table class="pdf-instances-table">';
-  
+  let tableHTML = '<div class="table-countainer"> <table class="pdf-instances-table">';
+
   // Crear header de la tabla
   tableHTML += '<thead><tr>';
   fieldKeys.forEach(fieldKey => {
     tableHTML += `<th>${formatFieldLabel(fieldKey)}</th>`;
   });
   tableHTML += '</tr></thead>';
-  
+
   // Crear filas de datos
   tableHTML += '<tbody>';
   instanceIds.forEach(instanceId => {
     const instanceData = instances[instanceId] || {};
     tableHTML += '<tr>';
-    
+
     fieldKeys.forEach(fieldKey => {
       const value = instanceData[fieldKey] || section.attributes[fieldKey] || '';
       tableHTML += `<td>${formatFieldValue(value)}</td>`;
     });
-    
+
     tableHTML += '</tr>';
   });
   tableHTML += '</tbody>';
-  
+
   tableHTML += '</table>';
-  
+
   return tableHTML;
 };
 
