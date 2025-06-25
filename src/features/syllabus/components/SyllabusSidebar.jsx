@@ -127,26 +127,27 @@ const SyllabusSidebar = ({
             <i className="fas fa-expand-arrows-alt me-2"></i>
             Controles de Sección
           </h6>
-          <div className="d-grid gap-2">
+          <hr />
+          <div className="d-flex justify-content-center gap-2">
             <button
-              className="btn btn-outline-primary btn-sm"
+              className="btn btn-primary btn-sm w-100"
               onClick={() => {
                 onExpandAll && onExpandAll();
               }}
               style={{ borderRadius: '8px' }}
             >
               <i className="fas fa-plus-circle me-2"></i>
-              Expandir Todo
+              Expandir Todo ⬇️
             </button>
             <button
-              className="btn btn-outline-secondary btn-sm"
+              className="btn btn-secondary btn-sm w-100"
               onClick={() => {
                 onCollapseAll && onCollapseAll();
               }}
               style={{ borderRadius: '8px' }}
             >
               <i className="fas fa-minus-circle me-2"></i>
-              Colapsar Todo
+              Colapsar Todo ➡️
             </button>
           </div>
         </div>
