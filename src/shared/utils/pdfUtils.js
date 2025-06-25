@@ -344,7 +344,6 @@ const generateInstancesTableHTML = (section, syllabusData) => {
   
   // Crear header de la tabla
   tableHTML += '<thead><tr>';
-  tableHTML += '<th class="instance-header">Elemento</th>';
   fieldKeys.forEach(fieldKey => {
     tableHTML += `<th>${formatFieldLabel(fieldKey)}</th>`;
   });
@@ -355,7 +354,6 @@ const generateInstancesTableHTML = (section, syllabusData) => {
   instanceIds.forEach(instanceId => {
     const instanceData = instances[instanceId] || {};
     tableHTML += '<tr>';
-    tableHTML += `<td class="instance-header">${instanceId}</td>`;
     
     fieldKeys.forEach(fieldKey => {
       const value = instanceData[fieldKey] || section.attributes[fieldKey] || '';
