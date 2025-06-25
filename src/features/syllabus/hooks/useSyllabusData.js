@@ -148,11 +148,20 @@ export const useSyllabusData = () => {
       const instances = { ...nodeData.instances };
       delete instances[instanceId];
       
+      // Reindex remaining instances to maintain consecutive numbering
+      const remainingInstances = {};
+      const sortedInstanceIds = Object.keys(instances).sort((a, b) => parseInt(a) - parseInt(b));
+      
+      sortedInstanceIds.forEach((oldId, index) => {
+        const newId = (index + 1).toString();
+        remainingInstances[newId] = instances[oldId];
+      });
+      
       const updatedData = {
         ...prev,
         [nodeId]: {
           ...nodeData,
-          instances
+          instances: remainingInstances
         }
       };
       
