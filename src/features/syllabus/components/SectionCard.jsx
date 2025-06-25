@@ -213,10 +213,9 @@ const SectionCard = ({
                                 onClick={() => onRemoveInstance(node.id, instanceId)}
                                 style={{
                                   borderRadius: '8px',
-                                  backgroundColor: '#FFFFFF',
-                                  border: '2px solid #DB0000',
-                                  color: '#DB0000',
-                                  padding: '2px 10px',
+                                  backgroundColor: '#DB0000',
+                                  color: '#FFFFFF',
+                                  padding: '4px 12px',
                                   fontSize: '13px',
                                   fontWeight: '600',
                                   transition: 'all 0.2s ease',
@@ -224,15 +223,6 @@ const SectionCard = ({
                                   alignItems: 'center',
                                   gap: '6px'
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = '#DB0000';
-                                  e.target.style.color = '#FFFFFF';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = '#FFFFFF';
-                                  e.target.style.color = '#DB0000';
-                                }}
-                                title={`Eliminar Elemento ${instanceId}`}
                               >
                                 <span style={{ fontSize: '14px' }}>✕</span>
                                 Eliminar
